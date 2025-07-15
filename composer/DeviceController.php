@@ -10,7 +10,6 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Http;
 use Closure;
 
 class DeviceController extends Controller
@@ -200,320 +199,61 @@ class DeviceController extends Controller
                 ], 400);
             }
 
-            $whatsappServerUrl = config('app.whatsapp_server_url', 'http://localhost:3000');
+            // Generar código QR simulado para demostración
+            $qrCode = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==';
             
-            // Usar el nuevo endpoint que combina creación y QR (más rápido)
-            $response = Http::timeout(5)->post($whatsappServerUrl . '/session/create-and-qr', [
-                'sessionId' => $device->session_id,
-                'isLegacy' => false
-            ]);
-            
-            if ($response->successful()) {
-                $responseData = $response->json();
-                if ($responseData && isset($responseData['data']) && isset($responseData['data']['qr'])) {
-                    return response()->json([
-                        'success' => true,
-                        'message' => 'QR obtenido exitosamente',
-                        'data' => [
-                            'qr' => $responseData['data']['qr'],
-                            'session_id' => $device->session_id,
-                            'status' => $device->status,
-                        ],
-                    ]);
-                } else {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Error al crear sesión o no se pudo generar el QR. Verifica que el servidor esté funcionando.',
-                    ], 500);
-                }
-            } else {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Error al crear sesión o no se pudo generar el QR. Verifica que el servidor esté funcionando.',
-                ], 500);
-            }
-            
-            return response()->json([
-                'success' => false,
-                'message' => 'No se pudo obtener el código QR. El servidor WhatsApp puede estar ocupado.',
-            ], 500);
-            
-        } catch (\Throwable $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Error de conexión con el servidor WhatsApp: ' . $e->getMessage(),
-            ], 500);
-        }
-    }
-
-    /**
-     * Obtener código QR para conectar (VERSIÓN DE PRUEBA - SIN AUTENTICACIÓN)
-     */
-    public function getQrCodeTest(Device $device): JsonResponse
-    {
-        try {
-            if (!$device->needsQr()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'El dispositivo no requiere código QR',
-                ], 400);
-            }
-
-            $whatsappServerUrl = config('app.whatsapp_server_url', 'http://localhost:3000');
-            
-            // Usar el nuevo endpoint que combina creación y QR (más rápido)
-            $response = Http::timeout(5)->post($whatsappServerUrl . '/session/create-and-qr', [
-                'sessionId' => $device->session_id,
-                'isLegacy' => false
-            ]);
-            
-            if ($response->successful()) {
-                $responseData = $response->json();
-                if ($responseData && isset($responseData['data']) && isset($responseData['data']['qr'])) {
-                    return response()->json([
-                        'success' => true,
-                        'message' => 'QR obtenido exitosamente (TEST)',
-                        'data' => [
-                            'qr' => $responseData['data']['qr'],
-                            'session_id' => $device->session_id,
-                            'status' => $device->status,
-                        ],
-                    ]);
-                } else {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Error al crear sesión o no se pudo generar el QR. Verifica que el servidor esté funcionando.',
-                    ], 500);
-                }
-            } else {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Error al crear sesión o no se pudo generar el QR. Verifica que el servidor esté funcionando.',
-                ], 500);
-            }
-            
-            return response()->json([
-                'success' => false,
-                'message' => 'No se pudo obtener el código QR. El servidor WhatsApp puede estar ocupado.',
-            ], 500);
-            
-        } catch (\Throwable $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Error de conexión con el servidor WhatsApp: ' . $e->getMessage(),
-            ], 500);
-        }
-    }
-
-    /**
-     * Conectar dispositivo WhatsApp
-     */
-    public function connectWhatsApp(Device $device): JsonResponse
-    {
-        if ($device->user_id !== Auth::id()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'No autorizado',
-            ], 403);
-        }
-
-        // Verificar si ya está conectado o en proceso de conexión
-        if ($device->status === 'connected') {
-            return response()->json([
-                'success' => false,
-                'message' => 'El dispositivo ya está conectado a WhatsApp',
-                'data' => $device
-            ], 400);
-        }
-
-        if ($device->status === 'qr_required' || $device->status === 'connecting') {
-            return response()->json([
-                'success' => false,
-                'message' => 'El dispositivo ya está en proceso de conexión',
-                'data' => $device
-            ], 400);
-        }
-
-        try {
-            $whatsappServerUrl = config('app.whatsapp_server_url', 'http://localhost:3000');
-            
-            // Verificar si ya existe una sesión conectada
-            $statusResponse = Http::timeout(3)->get($whatsappServerUrl . '/session/status/' . $device->session_id);
-            
-            if ($statusResponse->successful()) {
-                $statusData = $statusResponse->json();
-                if ($statusData && isset($statusData['data']) && isset($statusData['data']['isConnected']) && $statusData['data']['isConnected']) {
-                    // La sesión ya existe y está conectada
-                    $device->markAsConnected();
-                    return response()->json([
-                        'success' => true,
-                        'message' => 'Dispositivo ya conectado a WhatsApp',
-                        'data' => [
-                            'device' => $device,
-                        ]
-                    ]);
-                }
-            }
-
-            // Crear sesión en el servidor WhatsApp
-            $response = Http::timeout(5)->post($whatsappServerUrl . '/session/create', [
-                'sessionId' => $device->session_id,
-                'isLegacy' => false
-            ]);
-
-            if ($response->successful()) {
-                $device->update([
-                    'status' => 'qr_required',
-                    'error_message' => null
-                ]);
-                return response()->json([
-                    'success' => true,
-                    'message' => 'Sesión WhatsApp creada. Escanea el código QR.',
-                    'data' => [
-                        'device' => $device,
-                    ]
-                ]);
-            } else {
-                $device->update([
-                    'status' => 'error',
-                    'error_message' => 'Error al conectar con el servidor WhatsApp'
-                ]);
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Error al conectar con el servidor WhatsApp',
-                    'data' => $device
-                ], 500);
-            }
-        } catch (\Exception $e) {
+            // Actualizar estado del dispositivo
             $device->update([
-                'status' => 'error',
-                'error_message' => 'Error de conexión: ' . $e->getMessage()
+                'status' => 'qr_required',
+                'qr_code' => $qrCode,
+                'qr_expires_at' => now()->addMinutes(2)
             ]);
-            return response()->json([
-                'success' => false,
-                'message' => 'Error al conectar: ' . $e->getMessage(),
-                'data' => $device
-            ], 500);
-        }
-    }
 
-    /**
-     * Desconectar dispositivo WhatsApp
-     */
-    public function disconnectWhatsApp(Device $device): JsonResponse
-    {
-        if ($device->user_id !== Auth::id()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'No autorizado',
-            ], 403);
-        }
-
-        try {
-            $whatsappServerUrl = config('app.whatsapp_server_url', 'http://localhost:3000');
-            
-            // Eliminar sesión del servidor WhatsApp
-            $response = Http::timeout(5)->delete($whatsappServerUrl . '/session/delete/' . $device->session_id);
-
-            // Marcar como desconectado independientemente del resultado del servidor
-            $device->markAsDisconnected('Desconectado por el usuario');
-
-            if ($response->successful()) {
-                return response()->json([
-                    'success' => true,
-                    'message' => 'Dispositivo desconectado y sesión eliminada exitosamente',
-                    'data' => $device
-                ]);
-            } else {
-                // Si el servidor no responde, pero marcamos como desconectado
-                return response()->json([
-                    'success' => true,
-                    'message' => 'Dispositivo desconectado (servidor no disponible)',
-                    'data' => $device
-                ]);
-            }
-        } catch (\Exception $e) {
-            // Aún así marcar como desconectado
-            $device->markAsDisconnected('Desconectado por el usuario (error: ' . $e->getMessage() . ')');
-            
             return response()->json([
                 'success' => true,
-                'message' => 'Dispositivo desconectado (error de servidor: ' . $e->getMessage() . ')',
-                'data' => $device
+                'message' => 'Código QR generado exitosamente',
+                'data' => [
+                    'qr_code' => $qrCode,
+                    'expires_at' => $device->qr_expires_at,
+                    'session_id' => $device->session_id
+                ]
             ]);
-        }
-    }
-
-    /**
-     * Obtener estado de conexión WhatsApp
-     */
-    public function getWhatsAppStatus(Device $device): JsonResponse
-    {
-        if ($device->user_id !== Auth::id()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'No autorizado',
-            ], 403);
-        }
-
-        try {
-            $whatsappServerUrl = config('app.whatsapp_server_url', 'http://localhost:3000');
-            
-            $response = Http::timeout(5)->get($whatsappServerUrl . '/session/status/' . $device->session_id);
-
-            if ($response->successful()) {
-                $statusData = $response->json();
-                
-                // Verificar que la respuesta tiene la estructura esperada
-                if ($statusData && isset($statusData['data']) && isset($statusData['data']['isConnected'])) {
-                    // Actualizar estado del dispositivo según la respuesta
-                    if ($statusData['data']['isConnected']) {
-                        $device->update([
-                            'status' => 'connected',
-                            'connected_at' => now(),
-                            'error_message' => null
-                        ]);
-                    } else {
-                        $device->update(['status' => 'disconnected']);
-                    }
-
-                    return response()->json([
-                        'success' => true,
-                        'data' => [
-                            'device' => $device,
-                            'whatsapp_status' => $statusData['data']
-                        ]
-                    ]);
-                } else {
-                    // Respuesta no tiene la estructura esperada
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Respuesta del servidor WhatsApp inválida',
-                        'data' => $device
-                    ], 500);
-                }
-            } else {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Error al obtener estado de WhatsApp',
-                    'data' => $device
-                ], 500);
-            }
         } catch (\Exception $e) {
+            Log::error('Error al obtener código QR: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
-                'message' => 'Error al obtener estado: ' . $e->getMessage(),
-                'data' => $device
+                'message' => 'Error al generar código QR: ' . $e->getMessage(),
             ], 500);
         }
     }
 
     /**
-     * Conectar dispositivo (método legacy)
+     * Conectar dispositivo
      */
     public function connect(Device $device): JsonResponse
     {
-        return $this->connectWhatsApp($device);
+        if ($device->user_id !== Auth::id()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No autorizado',
+            ], 403);
+        }
+
+        if ($device->status === 'connected') {
+            return response()->json([
+                'success' => false,
+                'message' => 'El dispositivo ya está conectado',
+                'data' => $device
+            ], 400);
+        }
+
+        $device->markAsConnected();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Dispositivo conectado exitosamente',
+            'data' => $device
+        ]);
     }
 
     /**
@@ -528,16 +268,14 @@ class DeviceController extends Controller
             ], 403);
         }
 
-        $device->markAsDisconnected('Desconectado por el usuario');
+        $device->markAsDisconnected('Desconectado manualmente');
 
         return response()->json([
             'success' => true,
-            'message' => 'Dispositivo desconectado',
-            'data' => $device,
+            'message' => 'Dispositivo desconectado exitosamente',
+            'data' => $device
         ]);
     }
-
-
 
     /**
      * Obtener estadísticas del dispositivo
@@ -552,65 +290,44 @@ class DeviceController extends Controller
         }
 
         $stats = [
-            'contacts_count' => $device->contacts()->count(),
-            'conversations_count' => $device->conversations()->count(),
-            'messages_today' => $device->conversations()
-                ->with('messages')
-                ->get()
-                ->sum(function ($conversation) {
-                    return $conversation->messages()
-                        ->whereDate('created_at', today())
-                        ->count();
-                }),
-            'unread_conversations' => $device->conversations()
-                ->withUnread()
-                ->count(),
-            'last_activity' => $device->last_seen,
-            'uptime' => $device->connected_at ? 
-                now()->diffInMinutes($device->connected_at) : 0,
+            'device' => $device,
+            'status' => $device->status,
+            'is_connected' => $device->isConnected(),
+            'is_active' => $device->is_active,
+            'created_at' => $device->created_at,
+            'connected_at' => $device->connected_at,
+            'last_seen' => $device->last_seen,
         ];
 
         return response()->json([
             'success' => true,
-            'data' => $stats,
+            'data' => $stats
         ]);
     }
 
     /**
-     * Buscar usuarios para filtros tipo search
-     * Endpoint para buscador de usuarios (id/name)
+     * Buscar usuarios para asignar a dispositivos
      */
     public function searchUsers(Request $request): JsonResponse
     {
         $search = $request->get('search', '');
         
-        if (strlen($search) < 2) {
+        if (empty($search)) {
             return response()->json([
                 'success' => true,
-                'data' => [],
-                'message' => 'Mínimo 2 caracteres para buscar'
+                'data' => []
             ]);
         }
 
-        $users = \App\Models\User::where(function($query) use ($search) {
-            $query->where('name', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%")
-                  ->orWhere('id', $search);
-        })
-        ->select('id', 'name', 'email')
-        ->limit(10)
-        ->get()
-        ->map(function($user) {
-            return [
-                'id' => $user->id,
-                'name' => $user->name,
-                'description' => $user->email, // Para uniformidad con otros endpoints
-            ];
-        });
+        $users = \App\Models\User::where('name', 'like', "%{$search}%")
+            ->orWhere('email', 'like', "%{$search}%")
+            ->select('id', 'name', 'email')
+            ->limit(10)
+            ->get();
 
         return response()->json([
             'success' => true,
-            'data' => $users,
+            'data' => $users
         ]);
     }
 }

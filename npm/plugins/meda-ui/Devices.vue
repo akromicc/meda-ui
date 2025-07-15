@@ -159,11 +159,11 @@ export default {
         case 'delete':
           openDeleteModal(item)
           break
-        case 'connect_whatsapp':
-          connectWhatsApp(item)
+        case 'connect':
+          connectDevice(item)
           break
-        case 'disconnect_whatsapp':
-          disconnectWhatsApp(item)
+        case 'disconnect':
+          disconnectDevice(item)
           break
         case 'view_qr':
           viewQrCode(item)
@@ -327,31 +327,31 @@ export default {
       }
     }
 
-    // WhatsApp Actions
-    const connectWhatsApp = async (device) => {
+    // Device Actions
+    const connectDevice = async (device) => {
       // Usar modal de confirmación si está disponible
       dataModal.value.openModal({
-        title: 'Conectar WhatsApp',
+        title: 'Conectar Dispositivo',
         actionType: 'confirm',
         item: device,
         submitText: 'Conectar',
         loadingText: 'Conectando...',
-        confirmMessage: '¿Estás seguro de que quieres conectar este dispositivo a WhatsApp?',
-        endpoint: `/api/devices/${device.id}/connect-whatsapp`,
+        confirmMessage: '¿Estás seguro de que quieres conectar este dispositivo?',
+        endpoint: `/api/devices/${device.id}/connect`,
         method: 'POST'
       })
     }
 
-    const disconnectWhatsApp = async (device) => {
+    const disconnectDevice = async (device) => {
       // Usar modal de confirmación
       dataModal.value.openModal({
-        title: 'Desconectar WhatsApp',
+        title: 'Desconectar Dispositivo',
         actionType: 'confirm',
         item: device,
         submitText: 'Desconectar',
         loadingText: 'Desconectando...',
-        confirmMessage: '¿Estás seguro de que quieres desconectar este dispositivo de WhatsApp?',
-        endpoint: `/api/devices/${device.id}/disconnect-whatsapp`,
+        confirmMessage: '¿Estás seguro de que quieres desconectar este dispositivo?',
+        endpoint: `/api/devices/${device.id}/disconnect`,
         method: 'POST'
       })
     }
@@ -359,21 +359,21 @@ export default {
     const viewQrCode = async (device) => {
       // Verificar el estado del dispositivo antes de intentar obtener QR
       if (device.status === 'connected') {
-        error('Dispositivo ya conectado', 'Este dispositivo ya está conectado a WhatsApp. No necesita código QR.')
+        error('Dispositivo ya conectado', 'Este dispositivo ya está conectado. No necesita código QR.')
         return
       }
       
       if (device.status === 'disconnected') {
         // Si está desconectado, primero intentar conectar
-        success('Conectando dispositivo', 'Iniciando conexión con WhatsApp...')
-        await connectWhatsApp(device)
+        success('Conectando dispositivo', 'Iniciando conexión...')
+        await connectDevice(device)
         return
       }
       
       // Solo mostrar QR si está en estado qr_required o connecting
       if (device.status === 'qr_required' || device.status === 'connecting') {
         dataModal.value.openModal({
-          title: 'Código QR de WhatsApp',
+          title: 'Código QR',
           actionType: 'view',
           modalType: 'qr_view', // Identificador específico para QR
           endpoint: `/api/devices/${device.id}/qr`,
@@ -407,9 +407,9 @@ export default {
       handleModalSuccess,
       handleModalError,
       
-      // WhatsApp Actions
-      connectWhatsApp,
-      disconnectWhatsApp,
+      // Device Actions
+      connectDevice,
+      disconnectDevice,
       viewQrCode
     }
   }

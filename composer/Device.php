@@ -157,7 +157,7 @@ class Device extends Model
                     'label' => 'Nombre del Dispositivo',
                     'type' => 'text',
                     'required' => true,
-                    'placeholder' => 'Ej: Mi WhatsApp Business',
+                    'placeholder' => 'Ej: Mi Dispositivo',
                     'validation' => 'required|string|max:255'
                 ],
                 [
@@ -188,7 +188,7 @@ class Device extends Model
                     'key' => 'qr_code',
                     'label' => 'Código QR',
                     'type' => 'qr',
-                    'description' => 'Escanea este código QR con tu aplicación de WhatsApp',
+                    'description' => 'Código QR para conectar el dispositivo',
                     'hideInForm' => true,
                     'hideInView' => false
                 ],
@@ -234,25 +234,25 @@ class Device extends Model
                 'type' => 'confirm',
                 'confirmMessage' => '¿Estás seguro de que quieres eliminar este dispositivo? Esta acción no se puede deshacer.'
             ],
-            'connect_whatsapp' => [
-                'key' => 'connect_whatsapp',
-                'name' => 'connect_whatsapp',
-                'label' => 'Conectar WhatsApp',
-                'icon' => 'fa-brands fa-whatsapp',
+            'connect' => [
+                'key' => 'connect',
+                'name' => 'connect',
+                'label' => 'Conectar',
+                'icon' => 'fa fa-plug',
                 'color' => 'success',
                 'type' => 'confirm',
                 'condition' => 'status !== "connected"',
-                'confirmMessage' => '¿Estás seguro de que quieres conectar este dispositivo a WhatsApp?'
+                'confirmMessage' => '¿Estás seguro de que quieres conectar este dispositivo?'
             ],
-            'disconnect_whatsapp' => [
-                'key' => 'disconnect_whatsapp',
-                'name' => 'disconnect_whatsapp',
-                'label' => 'Desconectar WhatsApp',
+            'disconnect' => [
+                'key' => 'disconnect',
+                'name' => 'disconnect',
+                'label' => 'Desconectar',
                 'icon' => 'fa fa-times',
                 'color' => 'danger',
                 'type' => 'confirm',
                 'condition' => 'status === "connected"',
-                'confirmMessage' => '¿Estás seguro de que quieres desconectar este dispositivo de WhatsApp?'
+                'confirmMessage' => '¿Estás seguro de que quieres desconectar este dispositivo?'
             ],
             'view_qr' => [
                 'key' => 'view_qr',
