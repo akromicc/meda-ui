@@ -33,27 +33,24 @@ class DynamicUIService
                 $tableConfig = $this->generateDefaultTableConfig($model);
             }
 
-            if (method_exists($model, 'defineModals')) {
+            if (method_exists($model, 'getAllModals')) {
+                $modalsConfig = $model->getAllModals();
+            } elseif (method_exists($model, 'defineModals')) {
                 $modalsConfig = $model->defineModals();
             } else {
                 $modalsConfig = $this->generateDefaultModalsConfig($model);
             }
 
-            // Separar modales en categorías
+            // Separar modales en categorías y generar acciones automáticamente
             $createModal = $modalsConfig['create'] ?? null;
-            $itemActions = [];
-            
-            foreach ($modalsConfig as $key => $modal) {
-                if ($key !== 'create') {
-                    $itemActions[$key] = $modal;
-                }
-            }
+            $itemActions = $this->generateActionsFromModals($modalsConfig);
 
             return [
                 'table' => $tableConfig,
                 'modals' => $modalsConfig,
                 'createModal' => $createModal,
                 'itemActions' => $itemActions,
+                'actions' => $itemActions, // Alias para compatibilidad
                 'model' => [
                     'name' => class_basename($modelClass),
                     'table' => $model->getTable(),
@@ -198,6 +195,91 @@ class DynamicUIService
             'title' => $modals['create']['label'],
             'submitText' => 'Guardar'
         ];
+    }
+
+    /**
+     * Generar acciones automáticamente de los modales definidos
+     */
+    protected function generateActionsFromModals(array $modalsConfig): array
+    {
+        $actions = [];
+        
+        foreach ($modalsConfig as $key => $modal) {
+            // Excluir el modal de crear ya que tiene su propio botón
+            if ($key === 'create') {
+                continue;
+            }
+            
+            // Generar acción automáticamente del modal
+            $action = [
+                'key' => $key,
+                'label' => $modal['label'] ?? ucfirst($key),
+                'icon' => $modal['icon'] ?? $this->getDefaultIcon($key),
+                'color' => $modal['color'] ?? $this->getDefaultColor($key),
+                'type' => $modal['type'] ?? 'modal',
+                'modal' => $key, // Referencia al modal correspondiente
+                'method' => $modal['method'] ?? 'GET',
+                'endpoint' => $modal['endpoint'] ?? null,
+                'confirmMessage' => $modal['confirmMessage'] ?? null,
+                'permission' => $modal['permission'] ?? null,
+                'showInDropdown' => $modal['showInDropdown'] ?? true,
+                'showAsButton' => $modal['showAsButton'] ?? false,
+            ];
+            
+            $actions[] = $action;
+        }
+        
+        return $actions;
+    }
+
+    /**
+     * Obtener icono por defecto según el tipo de acción
+     */
+    protected function getDefaultIcon(string $actionKey): string
+    {
+        $iconMap = [
+            'view' => 'fa fa-eye',
+            'edit' => 'fa fa-edit',
+            'delete' => 'fa fa-trash',
+            'duplicate' => 'fa fa-copy',
+            'export' => 'fa fa-download',
+            'import' => 'fa fa-upload',
+            'print' => 'fa fa-print',
+            'share' => 'fa fa-share',
+            'archive' => 'fa fa-archive',
+            'restore' => 'fa fa-undo',
+            'approve' => 'fa fa-check',
+            'reject' => 'fa fa-times',
+            'activate' => 'fa fa-toggle-on',
+            'deactivate' => 'fa fa-toggle-off',
+        ];
+        
+        return $iconMap[$actionKey] ?? 'fa fa-cog';
+    }
+
+    /**
+     * Obtener color por defecto según el tipo de acción
+     */
+    protected function getDefaultColor(string $actionKey): string
+    {
+        $colorMap = [
+            'view' => 'info',
+            'edit' => 'warning',
+            'delete' => 'danger',
+            'duplicate' => 'secondary',
+            'export' => 'success',
+            'import' => 'primary',
+            'print' => 'secondary',
+            'share' => 'info',
+            'archive' => 'warning',
+            'restore' => 'success',
+            'approve' => 'success',
+            'reject' => 'danger',
+            'activate' => 'success',
+            'deactivate' => 'warning',
+        ];
+        
+        return $colorMap[$actionKey] ?? 'primary';
     }
 
     /**

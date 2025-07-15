@@ -1,328 +1,278 @@
 <template>
-  <div class="space-y-6">
+  <div class="p-6">
     <!-- Header -->
-    <div class="flex justify-between items-center">
-      <div>
-        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
-          Gestión de Usuarios
-        </h1>
-        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-          Administra los usuarios del sistema
-        </p>
-      </div>
-      <button
-        @click="openCreateModal"
-        class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800"
-      >
-        <i class="fas fa-plus mr-2"></i>
-        Nuevo Usuario
-      </button>
+    <div class="mb-6">
+      <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
+        Gestión de Usuarios
+      </h1>
+      <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
+        Administra los usuarios del sistema con acciones automáticas generadas de los modales
+      </p>
     </div>
 
-    <!-- Estadísticas -->
-    <MedaStatsGrid>
-      <MedaStatCard
-        title="Total Usuarios"
-        :value="stats?.total_users || 0"
-        icon="fas fa-users"
-        color="primary"
-        :loading="!stats"
-      />
-      
-      <MedaStatCard
-        title="Usuarios Activos"
-        :value="stats?.active_users || 0"
-        icon="fas fa-user-check"
-        color="success"
-        :loading="!stats"
-      />
-      
-      <MedaStatCard
-        title="Administradores"
-        :value="stats?.admin_users || 0"
-        icon="fas fa-user-shield"
-        color="warning"
-        :loading="!stats"
-      />
-      
-      <MedaStatCard
-        title="Inactivos"
-        :value="(stats?.total_users || 0) - (stats?.active_users || 0)"
-        icon="fas fa-user-times"
-        color="danger"
-        :loading="!stats"
-      />
-    </MedaStatsGrid>
+    <!-- Stats Cards -->
+    <StatsGrid 
+      :stats="stats" 
+      class="mb-6"
+    />
 
-    <!-- Tabla de Usuarios -->
-    <MedaDataTable
-      ref="dataTable"
+    <!-- Data Table with Automatic Actions -->
+    <DataTable
+      model-name="UserModel"
       endpoint="/api/users"
-      model-name="users"
-      @dataLoaded="handleDataLoaded"
+      :auto-load="true"
       @action="handleAction"
+      @success="handleSuccess"
     >
-      <!-- Custom cell para el rol -->
-      <template #cell-role="{ value }">
-        <span
-          :class="{
-            'inline-flex px-2 py-1 text-xs font-semibold rounded-full': true,
-            'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200': value === 'admin',
-            'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200': value === 'user',
-            'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200': value === 'moderator'
-          }"
-        >
-          {{ getRoleLabel(value) }}
-        </span>
-      </template>
-
-      <!-- Custom cell para el estado activo -->
-      <template #cell-is_active="{ value }">
-        <span
-          :class="{
-            'inline-flex px-2 py-1 text-xs font-semibold rounded-full': true,
-            'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200': value,
-            'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200': !value
-          }"
+      <!-- Custom cell for status -->
+      <template #cell-is_active="{ item, value }">
+        <span 
+          :class="[
+            'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium',
+            value 
+              ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
+              : 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'
+          ]"
         >
           {{ value ? 'Activo' : 'Inactivo' }}
         </span>
       </template>
 
-      <!-- Custom cell para el email -->
-      <template #cell-email="{ value }">
-        <a
-          :href="`mailto:${value}`"
-          class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-200"
+      <!-- Custom cell for role -->
+      <template #cell-role="{ item, value }">
+        <span 
+          :class="[
+            'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium',
+            value === 'admin' 
+              ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400'
+              : value === 'moderator'
+              ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400'
+              : 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400'
+          ]"
         >
-          {{ value }}
-        </a>
+          {{ getRoleLabel(value) }}
+        </span>
       </template>
+    </DataTable>
 
-      <!-- Custom cell para la fecha -->
-      <template #cell-created_at="{ value }">
-        <div class="text-sm">
-          <div class="text-gray-900 dark:text-gray-100">
-            {{ formatDate(value) }}
-          </div>
-          <div class="text-gray-500 dark:text-gray-400">
-            {{ formatTime(value) }}
-          </div>
-        </div>
-      </template>
-    </MedaDataTable>
-
-    <!-- Modal Universal -->
-    <MedaDataModal
-      ref="dataModal"
-      model-name="users"
+    <!-- Modal for CRUD operations -->
+    <DataModal
+      v-model="showModal"
+      :model-name="modalModelName"
+      :modal-type="modalType"
+      :modal-key="modalKey"
+      :initial-data="modalData"
       @success="handleModalSuccess"
-      @error="handleModalError"
+      @close="handleModalClose"
     />
   </div>
 </template>
 
 <script>
-import { ref } from 'vue'
-import { success, error } from '@/plugins/toast' // Asumiendo que tienes un sistema de toast
+import { ref, reactive, onMounted } from 'vue'
+import axios from 'axios'
+import DataTable from '../npm/plugins/meda-ui/components/DataTable/index.vue'
+import DataModal from '../npm/plugins/meda-ui/components/DataModal.vue'
+import StatsGrid from '../npm/plugins/meda-ui/components/StatsGrid.vue'
 
 export default {
   name: 'UsersPage',
+  components: {
+    DataTable,
+    DataModal,
+    StatsGrid
+  },
   setup() {
-    const dataTable = ref(null)
-    const dataModal = ref(null)
-    const stats = ref({})
+    // Modal state
+    const showModal = ref(false)
+    const modalType = ref('')
+    const modalKey = ref('')
+    const modalData = ref({})
+    const modalModelName = ref('UserModel')
 
-    // Manejar datos cargados
-    const handleDataLoaded = (data) => {
-      stats.value = data.stats || {}
-    }
-
-    // Manejar acciones de la tabla
-    const handleAction = ({ action, item }) => {
-      switch (action) {
-        case 'view':
-          openViewModal(item)
-          break
-        case 'edit':
-          openEditModal(item)
-          break
-        case 'delete':
-          openDeleteModal(item)
-          break
-        case 'toggle_status':
-          toggleUserStatus(item)
-          break
-        default:
-          console.warn('Acción no manejada:', action)
+    // Stats data
+    const stats = ref([
+      {
+        title: 'Total Usuarios',
+        value: 0,
+        change: '+12%',
+        changeType: 'positive',
+        icon: 'fa fa-users',
+        color: 'primary'
+      },
+      {
+        title: 'Usuarios Activos',
+        value: 0,
+        change: '+5%',
+        changeType: 'positive',
+        icon: 'fa fa-user-check',
+        color: 'success'
+      },
+      {
+        title: 'Administradores',
+        value: 0,
+        change: '0%',
+        changeType: 'neutral',
+        icon: 'fa fa-user-shield',
+        color: 'warning'
+      },
+      {
+        title: 'Nuevos Hoy',
+        value: 0,
+        change: '+3',
+        changeType: 'positive',
+        icon: 'fa fa-user-plus',
+        color: 'info'
       }
-    }
+    ])
 
-    // Abrir modal para crear usuario
-    const openCreateModal = () => {
-      dataModal.value.openModal({
-        title: 'Crear Usuario',
-        endpoint: '/api/users',
-        method: 'POST',
-        actionType: 'form',
-        submitText: 'Crear',
-        loadingText: 'Creando...'
-      })
-    }
-
-    // Abrir modal para ver usuario
-    const openViewModal = (user) => {
-      dataModal.value.openModal({
-        title: 'Información del Usuario',
-        actionType: 'view',
-        item: user
-      })
-    }
-
-    // Abrir modal para editar usuario
-    const openEditModal = (user) => {
-      dataModal.value.openModal({
-        title: 'Editar Usuario',
-        endpoint: `/api/users/${user.id}`,
-        method: 'PUT',
-        actionType: 'form',
-        item: user,
-        submitText: 'Actualizar',
-        loadingText: 'Actualizando...'
-      })
-    }
-
-    // Abrir modal para eliminar usuario
-    const openDeleteModal = (user) => {
-      dataModal.value.openModal({
-        title: 'Eliminar Usuario',
-        endpoint: `/api/users/${user.id}`,
-        method: 'DELETE',
-        actionType: 'confirm',
-        item: user,
-        submitText: 'Eliminar',
-        loadingText: 'Eliminando...',
-        confirmMessage: `¿Estás seguro de que quieres eliminar al usuario "${user.name}"? Esta acción no se puede deshacer.`
-      })
-    }
-
-    // Cambiar estado del usuario
-    const toggleUserStatus = async (user) => {
+    // Load stats
+    const loadStats = async () => {
       try {
-        const response = await fetch(`/api/users/${user.id}/toggle-status`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
-          }
+        const response = await axios.get('/api/users/stats')
+        if (response.data.success) {
+          stats.value = response.data.stats
+        }
+      } catch (error) {
+        console.error('Error loading stats:', error)
+      }
+    }
+
+    // Handle table actions (automatically generated from modals)
+    const handleAction = ({ action, item }) => {
+      console.log('🔧 Action triggered:', action, item)
+      
+      // Determine modal type based on action
+      if (action === 'view') {
+        modalType.value = 'view'
+        modalKey.value = 'view'
+        modalData.value = item
+        showModal.value = true
+      } else if (action === 'edit') {
+        modalType.value = 'edit'
+        modalKey.value = 'edit'
+        modalData.value = item
+        showModal.value = true
+      } else if (action === 'delete') {
+        modalType.value = 'confirm'
+        modalKey.value = 'delete'
+        modalData.value = item
+        showModal.value = true
+      } else if (action === 'toggle_status') {
+        // Handle custom action
+        handleToggleStatus(item)
+      } else if (action === 'duplicate') {
+        // Handle custom action
+        handleDuplicate(item)
+      } else if (action === 'export') {
+        // Handle custom action
+        handleExport()
+      }
+    }
+
+    // Handle custom actions
+    const handleToggleStatus = async (item) => {
+      try {
+        const response = await axios.post(`/api/users/${item.id}/toggle-status`)
+        if (response.data.success) {
+          // Refresh table data
+          this.$refs.dataTable?.refresh()
+          loadStats()
+        }
+      } catch (error) {
+        console.error('Error toggling status:', error)
+      }
+    }
+
+    const handleDuplicate = async (item) => {
+      try {
+        const response = await axios.post(`/api/users/${item.id}/duplicate`)
+        if (response.data.success) {
+          // Refresh table data
+          this.$refs.dataTable?.refresh()
+          loadStats()
+        }
+      } catch (error) {
+        console.error('Error duplicating user:', error)
+      }
+    }
+
+    const handleExport = async () => {
+      try {
+        const response = await axios.get('/api/users/export', {
+          responseType: 'blob'
         })
-
-        const data = await response.json()
-
-        if (data.success) {
-          success('Estado actualizado', data.message)
-          dataTable.value.refresh()
-        } else {
-          error('Error', data.message)
-        }
-      } catch (err) {
-        error('Error', 'No se pudo cambiar el estado del usuario')
-        console.error('Error al cambiar estado:', err)
+        
+        // Create download link
+        const url = window.URL.createObjectURL(new Blob([response.data]))
+        const link = document.createElement('a')
+        link.href = url
+        link.setAttribute('download', 'usuarios.csv')
+        document.body.appendChild(link)
+        link.click()
+        link.remove()
+      } catch (error) {
+        console.error('Error exporting users:', error)
       }
     }
 
-    // Manejar éxito del modal
-    const handleModalSuccess = (result) => {
-      console.log('Modal success:', result)
+    // Handle modal success
+    const handleModalSuccess = (data) => {
+      console.log('✅ Modal success:', data)
+      showModal.value = false
       
-      if (result.method === 'POST') {
-        success('Usuario creado', 'El usuario ha sido creado exitosamente')
-      } else if (result.method === 'PUT') {
-        success('Usuario actualizado', 'Los cambios han sido guardados')
-      } else if (result.method === 'DELETE') {
-        success('Usuario eliminado', 'El usuario ha sido eliminado del sistema')
-      }
-      
-      // Actualizar tabla
-      if (dataTable.value) {
-        dataTable.value.refresh()
-      }
+      // Refresh table and stats
+      this.$refs.dataTable?.refresh()
+      loadStats()
     }
 
-    // Manejar errores del modal
-    const handleModalError = (errorObj) => {
-      console.error('Modal error:', errorObj)
-      
-      if (errorObj.isModelNotFound) {
-        error('Usuario no encontrado', 'El usuario que intentas acceder ya no existe')
-        if (dataTable.value) {
-          dataTable.value.hardRefresh()
-        }
-        return
-      }
-      
-      const statusCode = errorObj.response?.status
-      const errorMessage = errorObj.response?.data?.message || errorObj.message || 'Error inesperado'
-      
-      if (statusCode === 422) {
-        error('Datos inválidos', 'Por favor revisa los datos ingresados')
-      } else if (statusCode === 403) {
-        error('Sin permisos', errorMessage)
-      } else if (statusCode === 500) {
-        error('Error del servidor', 'Ha ocurrido un error interno')
-      } else {
-        error('Error', errorMessage)
-      }
+    // Handle modal close
+    const handleModalClose = () => {
+      showModal.value = false
+      modalData.value = {}
     }
 
-    // Utilidades de formato
+    // Handle table success
+    const handleSuccess = (data) => {
+      console.log('✅ Table success:', data)
+    }
+
+    // Helper function to get role label
     const getRoleLabel = (role) => {
       const labels = {
-        admin: 'Administrador',
-        user: 'Usuario',
-        moderator: 'Moderador'
+        'admin': 'Administrador',
+        'moderator': 'Moderador',
+        'user': 'Usuario'
       }
       return labels[role] || role
     }
 
-    const formatDate = (date) => {
-      if (!date) return ''
-      return new Date(date).toLocaleDateString('es-ES')
-    }
-
-    const formatTime = (date) => {
-      if (!date) return ''
-      return new Date(date).toLocaleTimeString('es-ES', { 
-        hour: '2-digit', 
-        minute: '2-digit' 
-      })
-    }
+    // Load initial data
+    onMounted(() => {
+      loadStats()
+    })
 
     return {
-      // Refs
-      dataTable,
-      dataModal,
+      // State
+      showModal,
+      modalType,
+      modalKey,
+      modalData,
+      modalModelName,
       stats,
 
-      // Métodos principales
-      handleDataLoaded,
+      // Methods
       handleAction,
-      openCreateModal,
-
-      // Métodos de modal
       handleModalSuccess,
-      handleModalError,
-
-      // Utilidades
+      handleModalClose,
+      handleSuccess,
       getRoleLabel,
-      formatDate,
-      formatTime
+      loadStats
     }
   }
 }
 </script>
 
 <style scoped>
-/* Estilos adicionales si son necesarios */
+/* Custom styles for the page */
 </style>

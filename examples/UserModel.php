@@ -3,35 +3,39 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Meda\DynamicUI\Traits\HasMetadata;
 
 /**
- * Ejemplo de implementación de Dynamic UI
+ * Modelo de ejemplo usando Dynamic UI
  * 
- * Este es un ejemplo completo de cómo usar Dynamic UI
- * con un modelo User básico.
+ * Este ejemplo muestra cómo definir modales personalizados
+ * que generan acciones automáticamente en la UI.
  */
-class User extends Model
+class UserModel extends Model
 {
-    use HasMetadata;
+    use HasFactory, HasMetadata;
+
+    protected $table = 'users';
 
     protected $fillable = [
-        'name', 
-        'email', 
-        'phone', 
-        'role', 
-        'is_active'
+        'name',
+        'email',
+        'phone',
+        'role',
+        'is_active',
+        'password'
     ];
 
     protected $casts = [
         'is_active' => 'boolean',
-        'email_verified_at' => 'datetime'
+        'email_verified_at' => 'datetime',
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime'
     ];
 
     /**
-     * Configuración de tabla para Dynamic UI
-     * 
-     * Define cómo se mostrará la tabla de usuarios
+     * Definir configuración de tabla personalizada
      */
     public function defineTable(): array
     {
@@ -41,40 +45,45 @@ class User extends Model
                     'key' => 'id',
                     'label' => 'ID',
                     'type' => 'number',
-                    'width' => '80px',
-                    'sortable' => true
+                    'sortable' => true,
+                    'filterable' => false,
+                    'width' => '80px'
                 ],
                 [
                     'key' => 'name',
                     'label' => 'Nombre',
                     'type' => 'text',
                     'sortable' => true,
-                    'filterable' => true
+                    'filterable' => true,
+                    'width' => '200px'
                 ],
                 [
                     'key' => 'email',
-                    'label' => 'Correo',
+                    'label' => 'Email',
                     'type' => 'email',
                     'sortable' => true,
-                    'filterable' => true
+                    'filterable' => true,
+                    'width' => '250px'
                 ],
                 [
                     'key' => 'phone',
                     'label' => 'Teléfono',
                     'type' => 'phone',
-                    'sortable' => false,
-                    'filterable' => true
+                    'sortable' => true,
+                    'filterable' => true,
+                    'width' => '150px'
                 ],
                 [
                     'key' => 'role',
                     'label' => 'Rol',
                     'type' => 'select',
                     'sortable' => true,
-                    'filterable' => true
+                    'filterable' => true,
+                    'width' => '120px'
                 ],
                 [
                     'key' => 'is_active',
-                    'label' => 'Activo',
+                    'label' => 'Estado',
                     'type' => 'boolean',
                     'sortable' => true,
                     'filterable' => true,
@@ -82,10 +91,10 @@ class User extends Model
                 ],
                 [
                     'key' => 'created_at',
-                    'label' => 'Registrado',
+                    'label' => 'Creado',
                     'type' => 'date',
                     'sortable' => true,
-                    'filterable' => true,
+                    'filterable' => false,
                     'width' => '150px'
                 ]
             ],
@@ -96,8 +105,8 @@ class User extends Model
                     ['value' => 'moderator', 'label' => 'Moderador']
                 ],
                 'is_active' => [
-                    ['value' => 1, 'label' => 'Sí'],
-                    ['value' => 0, 'label' => 'No']
+                    ['value' => 1, 'label' => 'Activo'],
+                    ['value' => 0, 'label' => 'Inactivo']
                 ]
             ],
             'searchColumns' => ['name', 'email', 'phone'],
@@ -106,26 +115,118 @@ class User extends Model
     }
 
     /**
-     * Definir todos los modales disponibles
-     * 
-     * El sistema automáticamente separa "create" (botón principal) 
-     * vs acciones de item (menú tres puntos)
+     * Definir todos los modales (las acciones se generan automáticamente)
      */
     public function defineModals(): array
     {
-        // Campos compartidos para todos los modales
-        $fields = [
+        return [
+            'create' => [
+                'key' => 'create',
+                'label' => 'Crear Usuario',
+                'icon' => 'fa fa-plus',
+                'color' => 'primary',
+                'type' => 'form',
+                'fields' => $this->getDefaultFields(),
+                'method' => 'POST',
+                'showAsButton' => true,
+                'showInDropdown' => false
+            ],
+            'view' => [
+                'key' => 'view',
+                'label' => 'Ver Usuario',
+                'icon' => 'fa fa-eye',
+                'color' => 'info',
+                'type' => 'view',
+                'fields' => $this->getDefaultFields(),
+                'showInDropdown' => true,
+                'showAsButton' => false
+            ],
+            'edit' => [
+                'key' => 'edit',
+                'label' => 'Editar Usuario',
+                'icon' => 'fa fa-edit',
+                'color' => 'warning',
+                'type' => 'form',
+                'fields' => $this->getDefaultFields(),
+                'method' => 'PUT',
+                'showInDropdown' => true,
+                'showAsButton' => false
+            ],
+            'delete' => [
+                'key' => 'delete',
+                'label' => 'Eliminar Usuario',
+                'icon' => 'fa fa-trash',
+                'color' => 'danger',
+                'type' => 'confirm',
+                'confirmMessage' => '¿Estás seguro de que quieres eliminar este usuario?',
+                'method' => 'DELETE',
+                'showInDropdown' => true,
+                'showAsButton' => false
+            ]
+        ];
+    }
+
+    /**
+     * Definir acciones personalizadas adicionales
+     */
+    public function defineCustomActions(): array
+    {
+        return [
+            'toggle_status' => [
+                'key' => 'toggle_status',
+                'label' => 'Cambiar Estado',
+                'icon' => 'fa fa-toggle-on',
+                'color' => 'success',
+                'type' => 'confirm',
+                'confirmMessage' => '¿Estás seguro de que quieres cambiar el estado de este usuario?',
+                'method' => 'POST',
+                'endpoint' => '/api/users/{id}/toggle-status',
+                'showInDropdown' => true,
+                'showAsButton' => false
+            ],
+            'duplicate' => [
+                'key' => 'duplicate',
+                'label' => 'Duplicar',
+                'icon' => 'fa fa-copy',
+                'color' => 'secondary',
+                'type' => 'confirm',
+                'confirmMessage' => '¿Estás seguro de que quieres duplicar este usuario?',
+                'method' => 'POST',
+                'endpoint' => '/api/users/{id}/duplicate',
+                'showInDropdown' => true,
+                'showAsButton' => false
+            ],
+            'export' => [
+                'key' => 'export',
+                'label' => 'Exportar',
+                'icon' => 'fa fa-download',
+                'color' => 'success',
+                'type' => 'download',
+                'method' => 'GET',
+                'endpoint' => '/api/users/export',
+                'showInDropdown' => true,
+                'showAsButton' => false
+            ]
+        ];
+    }
+
+    /**
+     * Obtener campos por defecto para formularios
+     */
+    protected function getDefaultFields(): array
+    {
+        return [
             [
                 'key' => 'name',
-                'label' => 'Nombre Completo',
+                'label' => 'Nombre',
                 'type' => 'text',
                 'required' => true,
-                'placeholder' => 'Ej: Juan Pérez',
-                'validation' => 'required|string|max:255'
+                'placeholder' => 'Ingrese el nombre completo',
+                'validation' => 'required|min:2|max:100'
             ],
             [
                 'key' => 'email',
-                'label' => 'Correo Electrónico',
+                'label' => 'Email',
                 'type' => 'email',
                 'required' => true,
                 'placeholder' => 'usuario@ejemplo.com',
@@ -136,145 +237,37 @@ class User extends Model
                 'label' => 'Teléfono',
                 'type' => 'phone',
                 'required' => false,
-                'placeholder' => '+34 600 000 000',
-                'validation' => 'nullable|string|max:20'
+                'placeholder' => '+1234567890',
+                'validation' => 'nullable|phone'
             ],
             [
                 'key' => 'role',
-                'label' => 'Rol del Usuario',
+                'label' => 'Rol',
                 'type' => 'select',
                 'required' => true,
                 'options' => [
                     ['value' => 'user', 'label' => 'Usuario'],
-                    ['value' => 'admin', 'label' => 'Administrador'],
-                    ['value' => 'moderator', 'label' => 'Moderador']
+                    ['value' => 'moderator', 'label' => 'Moderador'],
+                    ['value' => 'admin', 'label' => 'Administrador']
                 ],
-                'defaultValue' => 'user',
-                'validation' => 'required|in:user,admin,moderator'
+                'validation' => 'required|in:user,moderator,admin'
             ],
             [
                 'key' => 'is_active',
                 'label' => 'Usuario Activo',
                 'type' => 'boolean',
-                'checkboxLabel' => 'Marcar como usuario activo',
-                'defaultValue' => true,
+                'required' => false,
+                'checkboxLabel' => 'Marcar si el usuario está activo',
                 'validation' => 'boolean'
-            ]
-        ];
-
-        return [
-            // Botón principal (crear)
-            'create' => [
-                'key' => 'create',
-                'label' => 'Nuevo Usuario',
-                'icon' => 'fa fa-plus',
-                'color' => 'primary',
-                'type' => 'form',
-                'fields' => $fields,
-                'method' => 'POST'
             ],
-            
-            // Acciones del menú tres puntos
-            'view' => [
-                'key' => 'view',
-                'label' => 'Ver',
-                'icon' => 'fa fa-eye',
-                'color' => 'info',
-                'type' => 'view',
-                'fields' => $fields
-            ],
-            'edit' => [
-                'key' => 'edit',
-                'label' => 'Editar',
-                'icon' => 'fa fa-edit',
-                'color' => 'warning',
-                'type' => 'form',
-                'fields' => $fields,
-                'method' => 'PUT'
-            ],
-            'delete' => [
-                'key' => 'delete',
-                'label' => 'Eliminar',
-                'icon' => 'fa fa-trash',
-                'color' => 'danger',
-                'type' => 'confirm',
-                'confirmMessage' => '¿Estás seguro de que quieres eliminar este usuario?',
-                'method' => 'DELETE'
-            ],
-            
-            // Acción personalizada
-            'toggle_status' => [
-                'key' => 'toggle_status',
-                'label' => 'Activar/Desactivar',
-                'icon' => 'fa fa-toggle-on',
-                'color' => 'secondary',
-                'type' => 'confirm',
-                'condition' => 'role !== "admin"', // Se evalúa en frontend
-                'confirmMessage' => '¿Cambiar el estado de este usuario?',
-                'endpoint' => '/toggle-status', // Endpoint relativo
-                'method' => 'POST'
-            ]
-        ];
-    }
-
-    /**
-     * Estadísticas que se mostrarán en cards
-     */
-    public function defineStats(): array
-    {
-        return [
-            'total_users' => [
-                'label' => 'Total Usuarios',
-                'icon' => 'fas fa-users',
-                'color' => 'primary',
-                'query' => function ($query) {
-                    return $query->count();
-                }
-            ],
-            'active_users' => [
-                'label' => 'Usuarios Activos',
-                'icon' => 'fas fa-user-check',
-                'color' => 'success',
-                'query' => function ($query) {
-                    return $query->where('is_active', true)->count();
-                }
-            ],
-            'admin_users' => [
-                'label' => 'Administradores',
-                'icon' => 'fas fa-user-shield',
-                'color' => 'warning',
-                'query' => function ($query) {
-                    return $query->where('role', 'admin')->count();
-                }
-            ]
-        ];
-    }
-
-    /**
-     * Filtros personalizados
-     */
-    public function defineFilters(): array
-    {
-        return [
-            'role_filter' => [
-                'type' => 'select',
-                'label' => 'Filtrar por Rol',
-                'options' => [
-                    ['value' => '', 'label' => 'Todos los roles'],
-                    ['value' => 'admin', 'label' => 'Administradores'],
-                    ['value' => 'user', 'label' => 'Usuarios'],
-                    ['value' => 'moderator', 'label' => 'Moderadores']
-                ]
-            ],
-            'status_filter' => [
-                'type' => 'boolean',
-                'label' => 'Solo Activos',
-                'field' => 'is_active'
-            ],
-            'created_range' => [
-                'type' => 'date_range',
-                'label' => 'Fecha de Registro',
-                'field' => 'created_at'
+            [
+                'key' => 'password',
+                'label' => 'Contraseña',
+                'type' => 'password',
+                'required' => false,
+                'placeholder' => 'Dejar vacío para mantener la actual',
+                'help' => 'Solo llenar si quieres cambiar la contraseña',
+                'validation' => 'nullable|min:6'
             ]
         ];
     }

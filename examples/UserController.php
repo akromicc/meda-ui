@@ -13,6 +13,7 @@ use Meda\DynamicUI\Services\DynamicUIService;
  * 
  * Este ejemplo muestra cómo crear un controlador CRUD
  * completo usando Dynamic UI con el mínimo código posible.
+ * Las acciones se generan automáticamente de los modales definidos.
  */
 class UserController extends Controller
 {
@@ -93,6 +94,8 @@ class UserController extends Controller
 
     /**
      * Acción personalizada: Activar/Desactivar usuario
+     * Esta acción se genera automáticamente del modal 'toggle_status'
+     * definido en el modelo User
      * 
      * POST /api/users/{id}/toggle-status
      */
@@ -116,6 +119,61 @@ class UserController extends Controller
                 ? 'Usuario activado exitosamente' 
                 : 'Usuario desactivado exitosamente',
             'data' => $user
+        ]);
+    }
+
+    /**
+     * Acción personalizada: Duplicar usuario
+     * Esta acción se genera automáticamente del modal 'duplicate'
+     * definido en el modelo User
+     * 
+     * POST /api/users/{id}/duplicate
+     */
+    public function duplicate(Request $request, string $id): JsonResponse
+    {
+        $user = User::findOrFail($id);
+        
+        // Crear copia del usuario
+        $newUser = $user->replicate();
+        $newUser->name = $user->name . ' (Copia)';
+        $newUser->email = 'copia_' . time() . '_' . $user->email;
+        $newUser->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Usuario duplicado exitosamente',
+            'data' => $newUser
+        ]);
+    }
+
+    /**
+     * Acción personalizada: Exportar usuarios
+     * Esta acción se genera automáticamente del modal 'export'
+     * definido en el modelo User
+     * 
+     * GET /api/users/export
+     */
+    public function export(Request $request): JsonResponse
+    {
+        $users = User::all();
+        
+        // Simular exportación
+        $exportData = $users->map(function($user) {
+            return [
+                'ID' => $user->id,
+                'Nombre' => $user->name,
+                'Email' => $user->email,
+                'Teléfono' => $user->phone,
+                'Estado' => $user->is_active ? 'Activo' : 'Inactivo',
+                'Creado' => $user->created_at->format('d/m/Y H:i')
+            ];
+        });
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Exportación completada',
+            'data' => $exportData,
+            'filename' => 'usuarios_' . date('Y-m-d_H-i-s') . '.csv'
         ]);
     }
 

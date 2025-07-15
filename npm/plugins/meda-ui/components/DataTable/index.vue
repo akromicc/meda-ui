@@ -698,14 +698,20 @@ export default {
 
     // Formatear acciones para el dropdown
     const formatActionsForDropdown = (actions, item) => {
-      return actions.map(action => ({
-        key: action.key || action.name,
-        label: action.label,
-        icon: action.icon,
-        // Usar color del backend si existe, si no mapear
-        color: action.color,
-        item: item // Pasar el item para tenerlo disponible en el click
-      }))
+      return actions
+        .filter(action => action.showInDropdown !== false) // Filtrar acciones que no deben aparecer en dropdown
+        .map(action => ({
+          key: action.key || action.name,
+          label: action.label,
+          icon: action.icon,
+          color: action.color,
+          type: action.type,
+          modal: action.modal, // Referencia al modal correspondiente
+          method: action.method,
+          endpoint: action.endpoint,
+          confirmMessage: action.confirmMessage,
+          item: item // Pasar el item para tenerlo disponible en el click
+        }))
     }
 
     // Manejar click en opción del dropdown

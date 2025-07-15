@@ -23,6 +23,7 @@ trait HasMetadata
     /**
      * Definir todos los modales (create, view, edit, delete, custom)
      * El sistema automáticamente separa crear vs. acciones de item
+     * Las acciones se generan automáticamente de los modales definidos
      */
     public function defineModals(): array
     {
@@ -35,7 +36,9 @@ trait HasMetadata
                 'type' => 'form',
                 'fields' => $this->getDefaultFields(),
                 'endpoint' => null, // Se determina automáticamente
-                'method' => 'POST'
+                'method' => 'POST',
+                'showAsButton' => true, // El botón de crear siempre se muestra como botón principal
+                'showInDropdown' => false
             ],
             'view' => [
                 'key' => 'view',
@@ -43,7 +46,9 @@ trait HasMetadata
                 'icon' => 'fa fa-eye',
                 'color' => 'info',
                 'type' => 'view',
-                'fields' => $this->getDefaultFields()
+                'fields' => $this->getDefaultFields(),
+                'showInDropdown' => true,
+                'showAsButton' => false
             ],
             'edit' => [
                 'key' => 'edit',
@@ -53,7 +58,9 @@ trait HasMetadata
                 'type' => 'form',
                 'fields' => $this->getDefaultFields(),
                 'endpoint' => null, // Se determina automáticamente
-                'method' => 'PUT'
+                'method' => 'PUT',
+                'showInDropdown' => true,
+                'showAsButton' => false
             ],
             'delete' => [
                 'key' => 'delete',
@@ -63,9 +70,56 @@ trait HasMetadata
                 'type' => 'confirm',
                 'confirmMessage' => '¿Estás seguro de que quieres eliminar este elemento?',
                 'endpoint' => null, // Se determina automáticamente
-                'method' => 'DELETE'
+                'method' => 'DELETE',
+                'showInDropdown' => true,
+                'showAsButton' => false
             ]
         ];
+    }
+
+    /**
+     * Definir acciones personalizadas adicionales
+     * Sobrescribir en el modelo para agregar acciones específicas
+     */
+    public function defineCustomActions(): array
+    {
+        return [
+            // Ejemplo de acciones personalizadas:
+            // 'duplicate' => [
+            //     'key' => 'duplicate',
+            //     'label' => 'Duplicar',
+            //     'icon' => 'fa fa-copy',
+            //     'color' => 'secondary',
+            //     'type' => 'form',
+            //     'fields' => $this->getDefaultFields(),
+            //     'method' => 'POST',
+            //     'endpoint' => '/api/duplicate',
+            //     'showInDropdown' => true,
+            //     'showAsButton' => false
+            // ],
+            // 'export' => [
+            //     'key' => 'export',
+            //     'label' => 'Exportar',
+            //     'icon' => 'fa fa-download',
+            //     'color' => 'success',
+            //     'type' => 'download',
+            //     'method' => 'GET',
+            //     'endpoint' => '/api/export',
+            //     'showInDropdown' => true,
+            //     'showAsButton' => false
+            // ]
+        ];
+    }
+
+    /**
+     * Obtener todos los modales incluyendo los personalizados
+     */
+    public function getAllModals(): array
+    {
+        $baseModals = $this->defineModals();
+        $customActions = $this->defineCustomActions();
+        
+        return array_merge($baseModals, $customActions);
     }
 
     /**
