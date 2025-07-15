@@ -106,103 +106,113 @@ class User extends Model
     }
 
     /**
-     * Configuración de modal/formulario para Dynamic UI
+     * Definir todos los modales disponibles
      * 
-     * Define cómo se mostrará el formulario de usuarios
+     * El sistema automáticamente separa "create" (botón principal) 
+     * vs acciones de item (menú tres puntos)
      */
-    public function defineModal(): array
+    public function defineModals(): array
     {
-        return [
-            'fields' => [
-                [
-                    'key' => 'name',
-                    'label' => 'Nombre Completo',
-                    'type' => 'text',
-                    'required' => true,
-                    'placeholder' => 'Ej: Juan Pérez',
-                    'validation' => 'required|string|max:255'
+        // Campos compartidos para todos los modales
+        $fields = [
+            [
+                'key' => 'name',
+                'label' => 'Nombre Completo',
+                'type' => 'text',
+                'required' => true,
+                'placeholder' => 'Ej: Juan Pérez',
+                'validation' => 'required|string|max:255'
+            ],
+            [
+                'key' => 'email',
+                'label' => 'Correo Electrónico',
+                'type' => 'email',
+                'required' => true,
+                'placeholder' => 'usuario@ejemplo.com',
+                'validation' => 'required|email|unique:users,email'
+            ],
+            [
+                'key' => 'phone',
+                'label' => 'Teléfono',
+                'type' => 'phone',
+                'required' => false,
+                'placeholder' => '+34 600 000 000',
+                'validation' => 'nullable|string|max:20'
+            ],
+            [
+                'key' => 'role',
+                'label' => 'Rol del Usuario',
+                'type' => 'select',
+                'required' => true,
+                'options' => [
+                    ['value' => 'user', 'label' => 'Usuario'],
+                    ['value' => 'admin', 'label' => 'Administrador'],
+                    ['value' => 'moderator', 'label' => 'Moderador']
                 ],
-                [
-                    'key' => 'email',
-                    'label' => 'Correo Electrónico',
-                    'type' => 'email',
-                    'required' => true,
-                    'placeholder' => 'usuario@ejemplo.com',
-                    'validation' => 'required|email|unique:users,email'
-                ],
-                [
-                    'key' => 'phone',
-                    'label' => 'Teléfono',
-                    'type' => 'phone',
-                    'required' => false,
-                    'placeholder' => '+34 600 000 000',
-                    'validation' => 'nullable|string|max:20'
-                ],
-                [
-                    'key' => 'role',
-                    'label' => 'Rol del Usuario',
-                    'type' => 'select',
-                    'required' => true,
-                    'options' => [
-                        ['value' => 'user', 'label' => 'Usuario'],
-                        ['value' => 'admin', 'label' => 'Administrador'],
-                        ['value' => 'moderator', 'label' => 'Moderador']
-                    ],
-                    'defaultValue' => 'user',
-                    'validation' => 'required|in:user,admin,moderator'
-                ],
-                [
-                    'key' => 'is_active',
-                    'label' => 'Usuario Activo',
-                    'type' => 'boolean',
-                    'checkboxLabel' => 'Marcar como usuario activo',
-                    'defaultValue' => true,
-                    'validation' => 'boolean'
-                ]
+                'defaultValue' => 'user',
+                'validation' => 'required|in:user,admin,moderator'
+            ],
+            [
+                'key' => 'is_active',
+                'label' => 'Usuario Activo',
+                'type' => 'boolean',
+                'checkboxLabel' => 'Marcar como usuario activo',
+                'defaultValue' => true,
+                'validation' => 'boolean'
             ]
         ];
-    }
 
-    /**
-     * Acciones disponibles para cada usuario
-     */
-    public function defineActionModals(): array
-    {
         return [
+            // Botón principal (crear)
+            'create' => [
+                'key' => 'create',
+                'label' => 'Nuevo Usuario',
+                'icon' => 'fa fa-plus',
+                'color' => 'primary',
+                'type' => 'form',
+                'fields' => $fields,
+                'method' => 'POST'
+            ],
+            
+            // Acciones del menú tres puntos
             'view' => [
                 'key' => 'view',
-                'name' => 'view',
                 'label' => 'Ver',
                 'icon' => 'fa fa-eye',
                 'color' => 'info',
-                'type' => 'view'
+                'type' => 'view',
+                'fields' => $fields
             ],
             'edit' => [
                 'key' => 'edit',
-                'name' => 'edit',
                 'label' => 'Editar',
                 'icon' => 'fa fa-edit',
                 'color' => 'warning',
-                'type' => 'form'
+                'type' => 'form',
+                'fields' => $fields,
+                'method' => 'PUT'
             ],
             'delete' => [
                 'key' => 'delete',
-                'name' => 'delete',
                 'label' => 'Eliminar',
                 'icon' => 'fa fa-trash',
                 'color' => 'danger',
                 'type' => 'confirm',
-                'confirmMessage' => '¿Estás seguro de que quieres eliminar este usuario?'
+                'confirmMessage' => '¿Estás seguro de que quieres eliminar este usuario?',
+                'method' => 'DELETE'
             ],
+            
+            // Acción personalizada
             'toggle_status' => [
                 'key' => 'toggle_status',
-                'name' => 'toggle_status',
                 'label' => 'Activar/Desactivar',
                 'icon' => 'fa fa-toggle-on',
                 'color' => 'secondary',
                 'type' => 'confirm',
-                'condition' => 'role !== "admin"',
-                'confirmMessage' => '¿Cambiar el estado de este usuario?'
+                'condition' => 'role !== "admin"', // Se evalúa en frontend
+                'confirmMessage' => '¿Cambiar el estado de este usuario?',
+                'endpoint' => '/toggle-status', // Endpoint relativo
+                'method' => 'POST'
             ]
         ];
     }

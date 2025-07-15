@@ -76,28 +76,81 @@ public function defineTable(): array
 | `url` | Enlace | URLs externas |
 | `custom` | Personalizado | Para custom cells |
 
-### Estructura de Modal (defineModal)
+### Estructura de Modales (defineModals) - API SIMPLIFICADA
 ```php
-public function defineModal(): array
+public function defineModals(): array
 {
+    // Campos compartidos para todos los modales
+    $fields = [
+        [
+            'key' => 'field_name',
+            'label' => 'Etiqueta del Campo',
+            'type' => 'text',              // Tipo de input
+            'required' => true,            // Campo obligatorio
+            'placeholder' => 'Texto...',   // Placeholder
+            'validation' => 'required|string|max:255', // Reglas Laravel
+            'defaultValue' => 'valor',     // Valor por defecto
+            'options' => [],               // Para select/radio
+            'multiple' => false,           // Para select múltiple
+            'searchEndpoint' => '/api/search', // Para campos de búsqueda
+            'hideInForm' => false,         // Ocultar en formulario
+            'hideInView' => false,         // Ocultar en vista
+            'readonly' => false,           // Solo lectura
+            'help' => 'Texto de ayuda'     // Texto de ayuda
+        ]
+    ];
+
     return [
-        'fields' => [
-            [
-                'key' => 'field_name',
-                'label' => 'Etiqueta del Campo',
-                'type' => 'text',              // Tipo de input
-                'required' => true,            // Campo obligatorio
-                'placeholder' => 'Texto...',   // Placeholder
-                'validation' => 'required|string|max:255', // Reglas Laravel
-                'defaultValue' => 'valor',     // Valor por defecto
-                'options' => [],               // Para select/radio
-                'multiple' => false,           // Para select múltiple
-                'searchEndpoint' => '/api/search', // Para campos de búsqueda
-                'hideInForm' => false,         // Ocultar en formulario
-                'hideInView' => false,         // Ocultar en vista
-                'readonly' => false,           // Solo lectura
-                'help' => 'Texto de ayuda'     // Texto de ayuda
-            ]
+        // Botón principal (crear)
+        'create' => [
+            'key' => 'create',
+            'label' => 'Crear Elemento',
+            'icon' => 'fa fa-plus',
+            'color' => 'primary',
+            'type' => 'form',
+            'fields' => $fields,
+            'method' => 'POST'
+        ],
+        
+        // Acciones del menú tres puntos (automáticamente)
+        'view' => [
+            'key' => 'view',
+            'label' => 'Ver',
+            'icon' => 'fa fa-eye',
+            'color' => 'info',
+            'type' => 'view',
+            'fields' => $fields
+        ],
+        'edit' => [
+            'key' => 'edit',
+            'label' => 'Editar',
+            'icon' => 'fa fa-edit',
+            'color' => 'warning',
+            'type' => 'form',
+            'fields' => $fields,
+            'method' => 'PUT'
+        ],
+        'delete' => [
+            'key' => 'delete',
+            'label' => 'Eliminar',
+            'icon' => 'fa fa-trash',
+            'color' => 'danger',
+            'type' => 'confirm',
+            'confirmMessage' => '¿Eliminar este elemento?',
+            'method' => 'DELETE'
+        ],
+        
+        // Acciones personalizadas (también van al menú tres puntos)
+        'custom_action' => [
+            'key' => 'custom_action',
+            'label' => 'Acción Custom',
+            'icon' => 'fa fa-star',
+            'color' => 'secondary',
+            'type' => 'confirm',
+            'condition' => 'status === "active"', // Condición JS
+            'confirmMessage' => '¿Ejecutar acción?',
+            'endpoint' => '/custom-action',       // Endpoint relativo
+            'method' => 'POST'
         ]
     ];
 }
@@ -125,25 +178,27 @@ public function defineModal(): array
 | `search` | Componente personalizado | Búsqueda en otra tabla |
 | `hidden` | `<input type="hidden">` | Campo oculto |
 
-### Estructura de Acciones (defineActionModals)
+### Separación Automática de Modales
+
+**El sistema automáticamente organiza los modales:**
+
+- **`create`** → Botón principal (ej: "Nuevo Usuario")
+- **Resto de modales** → Menú de tres puntos por fila
+
 ```php
-public function defineActionModals(): array
-{
-    return [
-        'action_key' => [
-            'key' => 'action_key',
-            'name' => 'action_key',
-            'label' => 'Texto del Botón',
-            'icon' => 'fa fa-icon',        // Clase de icono
-            'color' => 'primary',          // Color del botón
-            'type' => 'confirm',           // Tipo de acción
-            'condition' => 'field === "value"', // Condición JS
-            'confirmMessage' => '¿Confirmar?',   // Mensaje de confirmación
-            'endpoint' => '/api/custom',   // Endpoint personalizado
-            'method' => 'POST'             // Método HTTP
-        ]
-    ];
-}
+// Ejemplo de organización automática
+defineModals() = [
+    'create' => [...],     // → Botón principal
+    'view' => [...],       // → Menú tres puntos
+    'edit' => [...],       // → Menú tres puntos  
+    'delete' => [...],     // → Menú tres puntos
+    'custom' => [...]      // → Menú tres puntos
+]
+```
+
+**Condiciones dinámicas:**
+```php
+'condition' => 'status === "active" && role !== "admin"' // Se evalúa en frontend
 ```
 
 ### Tipos de Acción

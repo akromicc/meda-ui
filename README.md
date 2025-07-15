@@ -84,31 +84,74 @@ class Product extends Model
         ];
     }
 
-    public function defineModal(): array
+    // OPCIONAL: Personalizar modales (si no se define, se auto-genera todo)
+    public function defineModals(): array
     {
+        $fields = [
+            [
+                'key' => 'name',
+                'label' => 'Nombre del Producto',
+                'type' => 'text',
+                'required' => true,
+                'validation' => 'required|string|max:255'
+            ],
+            [
+                'key' => 'price',
+                'label' => 'Precio',
+                'type' => 'number',
+                'required' => true,
+                'validation' => 'required|numeric|min:0'
+            ],
+            [
+                'key' => 'category_id',
+                'label' => 'Categoría',
+                'type' => 'search',
+                'searchEndpoint' => '/api/search/categories',
+                'required' => true
+            ]
+        ];
+
         return [
-            'fields' => [
-                [
-                    'key' => 'name',
-                    'label' => 'Nombre del Producto',
-                    'type' => 'text',
-                    'required' => true,
-                    'validation' => 'required|string|max:255'
-                ],
-                [
-                    'key' => 'price',
-                    'label' => 'Precio',
-                    'type' => 'number',
-                    'required' => true,
-                    'validation' => 'required|numeric|min:0'
-                ],
-                [
-                    'key' => 'category_id',
-                    'label' => 'Categoría',
-                    'type' => 'search',
-                    'searchEndpoint' => '/api/search/categories',
-                    'required' => true
-                ]
+            'create' => [
+                'key' => 'create',
+                'label' => 'Nuevo Producto',
+                'icon' => 'fa fa-plus',
+                'type' => 'form',
+                'fields' => $fields,
+                'method' => 'POST'
+            ],
+            'view' => [
+                'key' => 'view',
+                'label' => 'Ver',
+                'icon' => 'fa fa-eye',
+                'type' => 'view',
+                'fields' => $fields
+            ],
+            'edit' => [
+                'key' => 'edit',
+                'label' => 'Editar',
+                'icon' => 'fa fa-edit',
+                'type' => 'form',
+                'fields' => $fields,
+                'method' => 'PUT'
+            ],
+            'delete' => [
+                'key' => 'delete',
+                'label' => 'Eliminar',
+                'icon' => 'fa fa-trash',
+                'type' => 'confirm',
+                'confirmMessage' => '¿Eliminar producto?',
+                'method' => 'DELETE'
+            ],
+            // Acción personalizada
+            'duplicate' => [
+                'key' => 'duplicate',
+                'label' => 'Duplicar',
+                'icon' => 'fa fa-copy',
+                'type' => 'confirm',
+                'confirmMessage' => '¿Duplicar este producto?',
+                'endpoint' => '/duplicate',
+                'method' => 'POST'
             ]
         ];
     }
@@ -296,17 +339,31 @@ Sistema de tarjetas para mostrar estadísticas.
 ### Acciones Personalizadas
 
 ```php
-// En tu modelo
-public function defineActionModals(): array
+// En defineModals() puedes agregar cualquier acción personalizada
+public function defineModals(): array
 {
     return [
+        // ... otros modales (create, view, edit, delete)
+        
         'duplicate' => [
             'key' => 'duplicate',
             'label' => 'Duplicar',
             'icon' => 'fa fa-copy',
             'color' => 'info',
             'type' => 'confirm',
-            'confirmMessage' => '¿Duplicar este producto?'
+            'confirmMessage' => '¿Duplicar este producto?',
+            'endpoint' => '/duplicate', // Endpoint relativo
+            'method' => 'POST'
+        ],
+        'export' => [
+            'key' => 'export',
+            'label' => 'Exportar',
+            'icon' => 'fa fa-download',
+            'color' => 'secondary',
+            'type' => 'confirm',
+            'confirmMessage' => '¿Exportar este producto?',
+            'endpoint' => '/export',
+            'method' => 'GET'
         ]
     ];
 }

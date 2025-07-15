@@ -19,11 +19,12 @@ interface DynamicModel
     public function defineModal(): array;
 
     /**
-     * Define las acciones disponibles para cada item (view, edit, delete, custom actions)
+     * Define todos los modales disponibles (view, edit, delete, create, custom)
+     * El sistema automáticamente los separa en botón "crear" y menú de tres puntos
      * 
      * @return array
      */
-    public function defineActionModals(): array;
+    public function defineModals(): array;
 
     /**
      * Define filtros personalizados para la tabla

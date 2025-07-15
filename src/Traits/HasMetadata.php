@@ -21,13 +21,62 @@ trait HasMetadata
     }
 
     /**
-     * Definir configuración de modal
-     * Sobrescribir en el modelo para personalizar
+     * Definir todos los modales (create, view, edit, delete, custom)
+     * El sistema automáticamente separa crear vs. acciones de item
+     */
+    public function defineModals(): array
+    {
+        return [
+            'create' => [
+                'key' => 'create',
+                'label' => 'Crear',
+                'icon' => 'fa fa-plus',
+                'color' => 'primary',
+                'type' => 'form',
+                'fields' => $this->getDefaultFields(),
+                'endpoint' => null, // Se determina automáticamente
+                'method' => 'POST'
+            ],
+            'view' => [
+                'key' => 'view',
+                'label' => 'Ver',
+                'icon' => 'fa fa-eye',
+                'color' => 'info',
+                'type' => 'view',
+                'fields' => $this->getDefaultFields()
+            ],
+            'edit' => [
+                'key' => 'edit',
+                'label' => 'Editar',
+                'icon' => 'fa fa-edit',
+                'color' => 'warning',
+                'type' => 'form',
+                'fields' => $this->getDefaultFields(),
+                'endpoint' => null, // Se determina automáticamente
+                'method' => 'PUT'
+            ],
+            'delete' => [
+                'key' => 'delete',
+                'label' => 'Eliminar',
+                'icon' => 'fa fa-trash',
+                'color' => 'danger',
+                'type' => 'confirm',
+                'confirmMessage' => '¿Estás seguro de que quieres eliminar este elemento?',
+                'endpoint' => null, // Se determina automáticamente
+                'method' => 'DELETE'
+            ]
+        ];
+    }
+
+    /**
+     * DEPRECATED: Usar defineModals() en su lugar
+     * Mantenido por compatibilidad
      */
     public function defineModal(): array
     {
+        $modals = $this->defineModals();
         return [
-            'fields' => $this->getDefaultFields(),
+            'fields' => $modals['create']['fields'] ?? $this->getDefaultFields(),
             'title' => $this->getModalTitle(),
             'submitText' => 'Guardar'
         ];

@@ -33,15 +33,27 @@ class DynamicUIService
                 $tableConfig = $this->generateDefaultTableConfig($model);
             }
 
-            if (method_exists($model, 'defineModal')) {
-                $modalConfig = $model->defineModal();
+            if (method_exists($model, 'defineModals')) {
+                $modalsConfig = $model->defineModals();
             } else {
-                $modalConfig = $this->generateDefaultModalConfig($model);
+                $modalsConfig = $this->generateDefaultModalsConfig($model);
+            }
+
+            // Separar modales en categorías
+            $createModal = $modalsConfig['create'] ?? null;
+            $itemActions = [];
+            
+            foreach ($modalsConfig as $key => $modal) {
+                if ($key !== 'create') {
+                    $itemActions[$key] = $modal;
+                }
             }
 
             return [
                 'table' => $tableConfig,
-                'modal' => $modalConfig,
+                'modals' => $modalsConfig,
+                'createModal' => $createModal,
+                'itemActions' => $itemActions,
                 'model' => [
                     'name' => class_basename($modelClass),
                     'table' => $model->getTable(),
@@ -114,9 +126,9 @@ class DynamicUIService
     }
 
     /**
-     * Generar configuración de modal por defecto
+     * Generar configuración de modales por defecto
      */
-    protected function generateDefaultModalConfig(Model $model): array
+    protected function generateDefaultModalsConfig(Model $model): array
     {
         $table = $model->getTable();
         $fillable = $model->getFillable();
@@ -133,9 +145,57 @@ class DynamicUIService
             ];
         }
 
+        $entityName = ucfirst(str_replace('_', ' ', $table));
+        
         return [
-            'fields' => $fields,
-            'title' => 'Crear ' . ucfirst(str_replace('_', ' ', $table)),
+            'create' => [
+                'key' => 'create',
+                'label' => "Crear {$entityName}",
+                'icon' => 'fa fa-plus',
+                'color' => 'primary',
+                'type' => 'form',
+                'fields' => $fields,
+                'method' => 'POST'
+            ],
+            'view' => [
+                'key' => 'view',
+                'label' => 'Ver',
+                'icon' => 'fa fa-eye',
+                'color' => 'info',
+                'type' => 'view',
+                'fields' => $fields
+            ],
+            'edit' => [
+                'key' => 'edit',
+                'label' => 'Editar',
+                'icon' => 'fa fa-edit',
+                'color' => 'warning',
+                'type' => 'form',
+                'fields' => $fields,
+                'method' => 'PUT'
+            ],
+            'delete' => [
+                'key' => 'delete',
+                'label' => 'Eliminar',
+                'icon' => 'fa fa-trash',
+                'color' => 'danger',
+                'type' => 'confirm',
+                'confirmMessage' => "¿Estás seguro de que quieres eliminar este {$entityName}?",
+                'method' => 'DELETE'
+            ]
+        ];
+    }
+
+    /**
+     * DEPRECATED: Generar configuración de modal por defecto
+     * Mantenido por compatibilidad
+     */
+    protected function generateDefaultModalConfig(Model $model): array
+    {
+        $modals = $this->generateDefaultModalsConfig($model);
+        return [
+            'fields' => $modals['create']['fields'],
+            'title' => $modals['create']['label'],
             'submitText' => 'Guardar'
         ];
     }
