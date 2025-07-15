@@ -27,7 +27,44 @@ composer require meda/dynamic-ui
 npm install @meda/dynamic-ui
 ```
 
-## 📖 Uso Rápido
+## 🚀 NUEVO: Sistema Automático de Rutas
+
+### ⚡ Crear Aplicación CRUD en 2 Pasos
+
+```php
+// 1. Una sola ruta (routes/api.php)
+Route::any('/dynamic/{model}/{action?}/{id?}', [\Meda\DynamicUI\Http\Controllers\AutoDynamicController::class, 'handle']);
+
+// 2. Crear modelo (app/Models/Task.php)
+class Task extends Model
+{
+    use HasMetadata;
+    
+    protected $fillable = ['title', 'description', 'priority', 'is_completed', 'due_date'];
+}
+```
+
+**¡YA ESTÁ!** Tienes una API REST completa:
+- `GET /dynamic/tasks` - Lista todas las tareas
+- `POST /dynamic/tasks` - Crea nueva tarea  
+- `GET /dynamic/tasks/1` - Muestra tarea 1
+- `PUT /dynamic/tasks/1` - Actualiza tarea 1
+- `DELETE /dynamic/tasks/1` - Elimina tarea 1
+- `GET /dynamic/tasks/metadata` - Metadatos para la UI
+
+### 🎨 Frontend Universal
+
+```vue
+<template>
+  <DynamicView 
+    model-name="tasks"
+    :use-auto-routes="true"
+    base-path="/dynamic"
+  />
+</template>
+```
+
+## 📖 Uso Completo
 
 ### 1. Configurar el Modelo
 

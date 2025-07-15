@@ -3,272 +3,181 @@
 return [
     /*
     |--------------------------------------------------------------------------
-    | Configuración de caché
+    | Cache Configuration
     |--------------------------------------------------------------------------
     |
-    | Tiempo de caché para metadatos en segundos
+    | Configuración del caché para metadatos de Dynamic UI
     |
     */
-    'cache_timeout' => env('DYNAMIC_UI_CACHE_TIMEOUT', 3600),
+    'cache_timeout' => env('DYNAMIC_UI_CACHE_TIMEOUT', 3600), // 1 hora
 
     /*
     |--------------------------------------------------------------------------
-    | Configuración de paginación
+    | Auto Routes Configuration
     |--------------------------------------------------------------------------
     |
-    | Configuración por defecto para paginación
+    | Configuración para el sistema de rutas automáticas
+    |
+    */
+    'auto_routes' => [
+        // Habilitar sistema de rutas automáticas
+        'enabled' => env('DYNAMIC_UI_AUTO_ROUTES', true),
+        
+        // Ruta base para endpoints dinámicos
+        'base_path' => env('DYNAMIC_UI_BASE_PATH', '/dynamic'),
+        
+        // Middlewares aplicados a rutas automáticas
+        'middleware' => ['api'], // agregar 'auth:api' si requieres autenticación
+        
+        // Modelos registrados automáticamente
+        'models' => [
+            // Alias => Configuración del modelo
+            'users' => [
+                'class' => 'App\\Models\\User',
+                'config' => [
+                    'relations' => [],
+                    'searchColumns' => ['name', 'email'],
+                    'perPage' => 15,
+                    'permissions' => ['users.view', 'users.create', 'users.edit', 'users.delete']
+                ]
+            ],
+            
+            'products' => [
+                'class' => 'App\\Models\\Product',
+                'config' => [
+                    'relations' => ['category'],
+                    'searchColumns' => ['name', 'description', 'category.name'],
+                    'perPage' => 20,
+                    'permissions' => ['products.manage']
+                ]
+            ],
+            
+            // Agregar más modelos aquí...
+        ],
+        
+        // Auto-descubrimiento de modelos
+        'auto_discovery' => [
+            'enabled' => true,
+            'namespaces' => ['App\\Models\\'],
+            'exclude' => ['User'] // Modelos a excluir del auto-descubrimiento
+        ]
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Pagination Configuration
+    |--------------------------------------------------------------------------
+    |
+    | Configuración de paginación por defecto
     |
     */
     'pagination' => [
         'default_per_page' => 15,
         'per_page_options' => [10, 15, 25, 50, 100],
-        'max_per_page' => 1000,
+        'max_per_page' => 100
     ],
 
     /*
     |--------------------------------------------------------------------------
-    | Configuración de filtros
+    | Validation Configuration
     |--------------------------------------------------------------------------
     |
-    | Configuración para filtros dinámicos
-    |
-    */
-    'filters' => [
-        'prefix' => 'f_',
-        'enabled' => true,
-        'date_format' => 'Y-m-d',
-        'datetime_format' => 'Y-m-d H:i:s',
-    ],
-
-    /*
-    |--------------------------------------------------------------------------
-    | Configuración de búsqueda
-    |--------------------------------------------------------------------------
-    |
-    | Configuración para búsqueda dinámica
-    |
-    */
-    'search' => [
-        'enabled' => true,
-        'min_length' => 2,
-        'max_length' => 100,
-    ],
-
-    /*
-    |--------------------------------------------------------------------------
-    | Configuración de ordenamiento
-    |--------------------------------------------------------------------------
-    |
-    | Configuración para ordenamiento dinámico
-    |
-    */
-    'sorting' => [
-        'default_sort_by' => 'created_at',
-        'default_order' => 'desc',
-        'allowed_orders' => ['asc', 'desc'],
-    ],
-
-    /*
-    |--------------------------------------------------------------------------
-    | Configuración de relaciones
-    |--------------------------------------------------------------------------
-    |
-    | Configuración para cargar relaciones automáticamente
-    |
-    */
-    'relations' => [
-        'auto_load' => false,
-        'max_depth' => 2,
-    ],
-
-    /*
-    |--------------------------------------------------------------------------
-    | Configuración de validación
-    |--------------------------------------------------------------------------
-    |
-    | Configuración para validación automática
+    | Configuración de validación automática
     |
     */
     'validation' => [
-        'auto_validate' => true,
-        'strict_mode' => false,
-        'custom_rules' => [],
-    ],
-
-    /*
-    |--------------------------------------------------------------------------
-    | Configuración de permisos
-    |--------------------------------------------------------------------------
-    |
-    | Configuración para verificación de permisos
-    |
-    */
-    'permissions' => [
         'enabled' => true,
-        'user_key' => 'user_id',
-        'check_ownership' => true,
+        'strict_mode' => false, // Si es true, requiere validación explícita
+        'auto_generate_rules' => true // Generar reglas automáticamente de los metadatos
     ],
 
     /*
     |--------------------------------------------------------------------------
-    | Configuración de respuestas
+    | Security Configuration
     |--------------------------------------------------------------------------
     |
-    | Configuración para respuestas JSON estandarizadas
+    | Configuración de seguridad
     |
     */
-    'responses' => [
-        'include_stats' => true,
-        'include_filters' => true,
-        'include_metadata' => false,
-        'success_key' => 'success',
-        'data_key' => 'data',
-        'message_key' => 'message',
-        'error_key' => 'error',
+    'security' => [
+        // Verificar permisos automáticamente
+        'check_permissions' => true,
+        
+        // Verificar ownership de registros
+        'check_ownership' => false,
+        
+        // Campo de ownership (ej: 'user_id')
+        'ownership_field' => 'user_id',
+        
+        // Modelos que requieren verificación de ownership
+        'ownership_models' => [
+            // 'App\\Models\\Post',
+            // 'App\\Models\\Comment'
+        ]
     ],
 
     /*
     |--------------------------------------------------------------------------
-    | Configuración de rutas dinámicas
+    | UI Configuration
     |--------------------------------------------------------------------------
     |
-    | Configuración para registrar rutas automáticamente
+    | Configuración de la interfaz de usuario
     |
     */
-    'routes' => [
-        // Ejemplo de configuración de rutas
-        // 'devices' => [
-        //     'model' => \App\Models\Device::class,
-        //     'controller' => \App\Http\Controllers\DeviceController::class,
-        //     'prefix' => 'api',
-        //     'middleware' => ['api', 'auth'],
-        //     'additional_routes' => [
-        //         'connect' => [
-        //             'method' => 'post',
-        //             'action' => 'connect'
-        //         ],
-        //         'disconnect' => [
-        //             'method' => 'post',
-        //             'action' => 'disconnect'
-        //         ]
-        //     ]
-        // ],
+    'ui' => [
+        // Tema por defecto
+        'theme' => 'light', // 'light', 'dark', 'auto'
+        
+        // Colores del tema
+        'colors' => [
+            'primary' => 'blue',
+            'secondary' => 'gray',
+            'success' => 'green',
+            'warning' => 'yellow',
+            'danger' => 'red',
+            'info' => 'blue'
+        ],
+        
+        // Configuración de iconos
+        'icons' => [
+            'provider' => 'fontawesome', // 'fontawesome', 'heroicons', 'tabler'
+            'prefix' => 'fa'
+        ]
     ],
 
     /*
     |--------------------------------------------------------------------------
-    | Configuración de columnas por defecto
+    | Export/Import Configuration
     |--------------------------------------------------------------------------
     |
-    | Configuración para columnas automáticas
+    | Configuración para exportación e importación
     |
     */
-    'default_columns' => [
-        'id' => [
-            'type' => 'number',
-            'width' => '80px',
-            'sortable' => true,
-            'filterable' => false,
-        ],
-        'created_at' => [
-            'type' => 'date',
-            'width' => '150px',
-            'sortable' => true,
-            'filterable' => true,
-        ],
-        'updated_at' => [
-            'type' => 'date',
-            'width' => '150px',
-            'sortable' => true,
-            'filterable' => true,
-        ],
-        'is_active' => [
-            'type' => 'boolean',
-            'width' => '100px',
-            'sortable' => true,
-            'filterable' => true,
-        ],
-        'status' => [
-            'type' => 'select',
-            'width' => '100px',
-            'sortable' => true,
-            'filterable' => true,
-        ],
-    ],
-
-    /*
-    |--------------------------------------------------------------------------
-    | Configuración de campos por defecto
-    |--------------------------------------------------------------------------
-    |
-    | Configuración para campos automáticos
-    |
-    */
-    'default_fields' => [
-        'name' => [
-            'type' => 'text',
-            'required' => true,
-            'validation' => 'required|string|max:255',
-        ],
-        'email' => [
-            'type' => 'email',
-            'required' => true,
-            'validation' => 'required|email|unique:users,email',
-        ],
-        'phone' => [
-            'type' => 'phone',
-            'required' => false,
-            'validation' => 'nullable|string',
-        ],
-        'description' => [
-            'type' => 'textarea',
-            'required' => false,
-            'validation' => 'nullable|string',
-        ],
-        'is_active' => [
-            'type' => 'boolean',
-            'required' => false,
-            'validation' => 'boolean',
-            'default_value' => true,
-        ],
-    ],
-
-    /*
-    |--------------------------------------------------------------------------
-    | Configuración de opciones por defecto
-    |--------------------------------------------------------------------------
-    |
-    | Configuración para opciones automáticas
-    |
-    */
-    'default_options' => [
-        'is_active' => [
-            ['value' => 1, 'label' => 'Sí'],
-            ['value' => 0, 'label' => 'No'],
-        ],
-        'status' => [
-            ['value' => 'active', 'label' => 'Activo'],
-            ['value' => 'inactive', 'label' => 'Inactivo'],
-            ['value' => 'pending', 'label' => 'Pendiente'],
-        ],
-        'type' => [
-            ['value' => 'user', 'label' => 'Usuario'],
-            ['value' => 'admin', 'label' => 'Administrador'],
-            ['value' => 'moderator', 'label' => 'Moderador'],
-        ],
-    ],
-
-    /*
-    |--------------------------------------------------------------------------
-    | Configuración de logging
-    |--------------------------------------------------------------------------
-    |
-    | Configuración para logging de errores
-    |
-    */
-    'logging' => [
+    'export' => [
         'enabled' => true,
-        'channel' => 'dynamic-ui',
-        'level' => 'error',
+        'formats' => ['csv', 'excel', 'json'],
+        'max_records' => 10000,
+        'chunk_size' => 1000
     ],
+
+    'import' => [
+        'enabled' => true,
+        'max_file_size' => '10M',
+        'allowed_types' => ['csv', 'xlsx'],
+        'validate_headers' => true
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Debug Configuration
+    |--------------------------------------------------------------------------
+    |
+    | Configuración de debug
+    |
+    */
+    'debug' => [
+        'enabled' => env('APP_DEBUG', false),
+        'log_queries' => false,
+        'log_metadata_generation' => false
+    ]
 ];
