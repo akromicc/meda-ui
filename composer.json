@@ -1,6 +1,6 @@
 {
-    "name": "meda/dynamic-crud",
-    "description": "Librería dinámica para CRUD con paginación, búsqueda y rutas dinámicas",
+    "name": "meda/dynamic-ui",
+    "description": "Librería dinámica para vistas con tablas, paginación, búsqueda y componentes reutilizables",
     "type": "library",
     "license": "MIT",
     "authors": [
@@ -23,18 +23,18 @@
     },
     "autoload": {
         "psr-4": {
-            "Meda\\DynamicCrud\\": "src/"
+            "Meda\\DynamicUI\\": "src/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "Meda\\DynamicCrud\\Tests\\": "tests/"
+            "Meda\\DynamicUI\\Tests\\": "tests/"
         }
     },
     "extra": {
         "laravel": {
             "providers": [
-                "Meda\\DynamicCrud\\DynamicCrudServiceProvider"
+                "Meda\\DynamicUI\\DynamicUIServiceProvider"
             ]
         }
     },
