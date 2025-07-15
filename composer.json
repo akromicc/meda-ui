@@ -1,8 +1,10 @@
 {
     "name": "meda/dynamic-ui",
-    "description": "Librería dinámica para vistas con tablas, paginación, búsqueda y componentes reutilizables",
+    "description": "Librería moderna para Laravel + Vue.js que permite crear interfaces CRUD completas usando solo metadatos del backend. Elimina la necesidad de crear formularios, tablas y modales repetitivos.",
     "type": "library",
     "license": "MIT",
+    "keywords": ["laravel", "vue", "crud", "dynamic", "ui", "table", "modal", "metadata", "tailwind"],
+    "homepage": "https://github.com/meda/dynamic-ui",
     "authors": [
         {
             "name": "Meda Team",
@@ -10,16 +12,18 @@
         }
     ],
     "require": {
-        "php": "^8.0",
+        "php": "^8.1",
         "laravel/framework": "^10.0|^11.0",
         "illuminate/http": "^10.0|^11.0",
         "illuminate/database": "^10.0|^11.0",
         "illuminate/support": "^10.0|^11.0",
+        "illuminate/cache": "^10.0|^11.0",
         "carbon/carbon": "^2.0"
     },
     "require-dev": {
         "phpunit/phpunit": "^10.0",
-        "orchestra/testbench": "^8.0|^9.0"
+        "orchestra/testbench": "^8.0|^9.0",
+        "mockery/mockery": "^1.4"
     },
     "autoload": {
         "psr-4": {
@@ -35,12 +39,20 @@
         "laravel": {
             "providers": [
                 "Meda\\DynamicUI\\DynamicUIServiceProvider"
-            ]
+            ],
+            "aliases": {
+                "DynamicUI": "Meda\\DynamicUI\\Facades\\DynamicUI"
+            }
         }
     },
     "config": {
-        "sort-packages": true
+        "sort-packages": true,
+        "optimize-autoloader": true
     },
     "minimum-stability": "stable",
-    "prefer-stable": true
+    "prefer-stable": true,
+    "scripts": {
+        "test": "vendor/bin/phpunit",
+        "test-coverage": "vendor/bin/phpunit --coverage-html coverage"
+    }
 }

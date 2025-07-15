@@ -1,100 +1,53 @@
-# DynamicUI - Librería para Vistas Dinámicas
+# Dynamic UI - Librería de CRUD Dinámico
 
-Una librería completa para crear vistas dinámicas con tablas, paginación, búsqueda y componentes reutilizables en Laravel y Vue.js.
+Una librería moderna para Laravel + Vue.js que permite crear interfaces CRUD completas usando solo metadatos del backend. Elimina la necesidad de crear formularios, tablas y modales repetitivos.
 
-## Características
+## 🎯 Objetivo Principal
 
-- ✅ **Tablas dinámicas** con paginación automática
-- ✅ **Búsqueda avanzada** con filtros múltiples
-- ✅ **Ordenamiento** por columnas
-- ✅ **CRUD dinámico** con formularios automáticos
-- ✅ **Rutas dinámicas** configurables
-- ✅ **Componentes Vue.js** reutilizables
-- ✅ **Metadatos automáticos** basados en modelos
-- ✅ **Caché inteligente** para mejor rendimiento
-- ✅ **Validación automática** de formularios
-- ✅ **Permisos integrados** para seguridad
+**Resolver el problema de crear estructuras repetitivas** en aplicaciones web. Con Dynamic UI, defines los metadatos una vez en tu modelo de Laravel y obtienes automáticamente:
 
-## Instalación
+- ✅ Tablas con filtros, búsqueda y ordenamiento
+- ✅ Modales para crear, editar y ver registros  
+- ✅ Validación automática de formularios
+- ✅ Estadísticas y métricas en cards
+- ✅ Acciones personalizadas por registro
+- ✅ Sistema de caché para metadatos
+- ✅ Diseño responsive con Tailwind CSS
 
-### Composer (PHP)
+## 🚀 Instalación
+
+### Backend (Laravel)
 
 ```bash
 composer require meda/dynamic-ui
 ```
 
-### NPM (Vue.js)
+Publicar configuración:
+```bash
+php artisan vendor:publish --provider="Meda\DynamicUI\DynamicUIServiceProvider"
+```
+
+### Frontend (Vue.js)
 
 ```bash
 npm install @meda/dynamic-ui
 ```
 
-## Configuración
-
-### Laravel
-
-1. **Publicar configuración:**
-
-```bash
-php artisan vendor:publish --tag=dynamic-ui-config
-```
-
-2. **Registrar ServiceProvider** (automático con composer):
-
-```php
-// config/app.php
-'providers' => [
-    // ...
-    Meda\DynamicUI\DynamicUIServiceProvider::class,
-];
-```
-
-3. **Configurar rutas dinámicas:**
-
-```php
-// config/dynamic-ui.php
-'routes' => [
-    'devices' => [
-        'model' => \App\Models\Device::class,
-        'controller' => \App\Http\Controllers\DeviceController::class,
-        'prefix' => 'api',
-        'middleware' => ['api', 'auth'],
-        'additional_routes' => [
-            'connect' => [
-                'method' => 'post',
-                'action' => 'connect'
-            ]
-        ]
-    ],
-],
-```
-
-### Vue.js
-
 ```javascript
 // main.js
 import { createApp } from 'vue'
-import DynamicUI from '@meda/dynamic-ui'
-import '@meda/dynamic-ui/dist/style.css'
+import MedaUI from '@meda/dynamic-ui'
 
-const app = createApp(App)
-
-app.use(DynamicUI, {
-  metadataEndpoint: '/api/metadata',
-  dataEndpoint: '/api',
-  cacheTimeout: 60 * 60 * 1000,
-  pagination: {
-    perPage: 15,
-    perPageOptions: [10, 15, 25, 50, 100]
-  }
+const app = createApp({})
+app.use(MedaUI, {
+  cacheTimeout: 3600000, // 1 hora
+  metadataEndpoint: '/api/metadata'
 })
-
-app.mount('#app')
 ```
 
-## Uso Básico
+## 📖 Uso Básico
 
-### 1. Configurar Modelo
+### 1. Preparar tu Modelo (Laravel)
 
 ```php
 <?php
@@ -104,243 +57,181 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Meda\DynamicUI\Traits\HasMetadata;
 
-class Device extends Model
+class Product extends Model
 {
     use HasMetadata;
 
-    protected $fillable = [
-        'name',
-        'status',
-        'is_active',
-        'user_id'
-    ];
-
+    protected $fillable = ['name', 'price', 'category_id', 'is_active'];
+    
     protected $casts = [
-        'is_active' => 'boolean',
-        'created_at' => 'datetime',
+        'price' => 'decimal:2',
+        'is_active' => 'boolean'
     ];
 
-    // Definir configuración de tabla
+    // OPCIONAL: Personalizar metadatos (si no se define, se auto-genera)
     public function defineTable(): array
     {
         return [
             'columns' => [
-                ['key' => 'id', 'label' => 'ID', 'type' => 'number', 'sortable' => true],
-                ['key' => 'name', 'label' => 'Nombre', 'type' => 'text', 'sortable' => true, 'filterable' => true],
-                ['key' => 'status', 'label' => 'Estado', 'type' => 'select', 'sortable' => true, 'filterable' => true],
-                ['key' => 'is_active', 'label' => 'Activo', 'type' => 'boolean', 'sortable' => true],
-                ['key' => 'user.name', 'label' => 'Usuario', 'type' => 'search', 'filterable' => true],
-                ['key' => 'created_at', 'label' => 'Fecha', 'type' => 'date', 'sortable' => true]
+                ['key' => 'id', 'label' => 'ID', 'type' => 'number', 'width' => '80px'],
+                ['key' => 'name', 'label' => 'Nombre', 'type' => 'text', 'sortable' => true],
+                ['key' => 'price', 'label' => 'Precio', 'type' => 'number', 'sortable' => true],
+                ['key' => 'category.name', 'label' => 'Categoría', 'type' => 'text'],
+                ['key' => 'is_active', 'label' => 'Activo', 'type' => 'boolean'],
             ],
-            'options' => [
-                'status' => [
-                    ['value' => 'connected', 'label' => 'Conectado'],
-                    ['value' => 'disconnected', 'label' => 'Desconectado']
-                ],
-                'is_active' => [
-                    ['value' => 1, 'label' => 'Sí'],
-                    ['value' => 0, 'label' => 'No']
-                ]
-            ],
-            'searchColumns' => ['name', 'user.name', 'user.email'],
-            'relations' => ['user']
+            'relations' => ['category'],
+            'searchColumns' => ['name', 'category.name']
         ];
     }
 
-    // Definir configuración de modal
     public function defineModal(): array
     {
         return [
             'fields' => [
                 [
                     'key' => 'name',
-                    'label' => 'Nombre del Dispositivo',
+                    'label' => 'Nombre del Producto',
                     'type' => 'text',
                     'required' => true,
-                    'placeholder' => 'Ej: Mi WhatsApp'
+                    'validation' => 'required|string|max:255'
                 ],
                 [
-                    'key' => 'user_id',
-                    'label' => 'Usuario',
-                    'type' => 'search',
+                    'key' => 'price',
+                    'label' => 'Precio',
+                    'type' => 'number',
                     'required' => true,
-                    'searchEndpoint' => '/api/search/users'
+                    'validation' => 'required|numeric|min:0'
                 ],
                 [
-                    'key' => 'is_active',
-                    'label' => 'Activo',
-                    'type' => 'boolean',
-                    'defaultValue' => true
+                    'key' => 'category_id',
+                    'label' => 'Categoría',
+                    'type' => 'search',
+                    'searchEndpoint' => '/api/search/categories',
+                    'required' => true
                 ]
-            ],
-            'title' => 'Crear Dispositivo',
-            'submitText' => 'Guardar'
+            ]
         ];
     }
 }
 ```
 
-### 2. Crear Vista Vue
+### 2. Crear Rutas (Laravel)
+
+```php
+// routes/api.php
+use App\Models\Product;
+use Meda\DynamicUI\Http\Controllers\DynamicController;
+
+Route::prefix('products')->group(function () {
+    $controller = new DynamicController(app(\Meda\DynamicUI\Services\DynamicUIService::class));
+    $controller->configure(Product::class);
+
+    Route::get('/', [$controller, 'index']);
+    Route::post('/', [$controller, 'store']);
+    Route::get('/{id}', [$controller, 'show']);
+    Route::put('/{id}', [$controller, 'update']);
+    Route::delete('/{id}', [$controller, 'destroy']);
+    Route::get('/metadata', [$controller, 'metadata']);
+});
+```
+
+### 3. Usar en Vue.js
 
 ```vue
 <template>
   <div class="space-y-6">
-    <!-- Header -->
-    <div class="md:flex md:items-center md:justify-between">
-      <div class="flex-1 min-w-0">
-        <h2 class="text-2xl font-bold">Dispositivos</h2>
-        <p class="mt-1 text-sm text-gray-500">
-          Gestiona tus dispositivos conectados
-        </p>
-      </div>
-      <div class="mt-4 md:mt-0">
-        <button
-          @click="openCreateModal"
-          class="btn btn-primary"
-        >
-          <i class="fas fa-plus mr-2"></i>
-          Nuevo Dispositivo
-        </button>
-      </div>
+    <!-- Header con botón crear -->
+    <div class="flex justify-between items-center">
+      <h1 class="text-2xl font-bold">Productos</h1>
+      <button @click="openCreateModal" class="btn-primary">
+        Nuevo Producto
+      </button>
     </div>
 
-    <!-- Stats Cards -->
-    <DynamicStatsGrid>
-      <DynamicStatCard
-        icon="fas fa-mobile-alt"
-        title="Total Dispositivos"
-        :value="stats?.total_devices || 0"
-        :loading="!stats"
-        color="primary"
+    <!-- Estadísticas (opcional) -->
+    <MedaStatsGrid>
+      <MedaStatCard 
+        title="Total Productos" 
+        :value="stats?.total || 0" 
+        icon="fas fa-box"
       />
-      
-      <DynamicStatCard
+      <MedaStatCard 
+        title="Activos" 
+        :value="stats?.active || 0" 
         icon="fas fa-check-circle"
-        title="Conectados"
-        :value="stats?.connected_devices || 0"
-        :loading="!stats"
-        color="success"
       />
-    </DynamicStatsGrid>
+    </MedaStatsGrid>
 
-    <!-- Data Table -->
-    <DynamicDataTable
+    <!-- Tabla con todas las funcionalidades -->
+    <MedaDataTable
       ref="dataTable"
-      endpoint="/api/devices"
-      model-name="devices"
-      @data-loaded="handleDataLoaded"
+      endpoint="/api/products"
+      model-name="products"
+      @dataLoaded="handleDataLoaded"
       @action="handleAction"
     >
-      <!-- Custom Status Cell -->
-      <template #cell-status="{ value }">
-        <span
-          :class="['badge', getStatusColor(value)]"
-        >
-          {{ getStatusLabel(value) }}
-        </span>
+      <!-- Custom cells (opcional) -->
+      <template #cell-price="{ value }">
+        ${{ value.toFixed(2) }}
       </template>
+    </MedaDataTable>
 
-      <!-- Custom User Cell -->
-      <template #cell-user="{ item }">
-        <div class="flex items-center">
-          <div class="avatar">
-            <span>{{ item.user?.name?.charAt(0) }}</span>
-          </div>
-          <div class="ml-3">
-            <div class="font-medium">{{ item.user?.name }}</div>
-            <div class="text-sm text-gray-500">{{ item.user?.email }}</div>
-          </div>
-        </div>
-      </template>
-    </DynamicDataTable>
-
-    <!-- Data Modal -->
-    <DynamicDataModal
+    <!-- Modal universal -->
+    <MedaDataModal
       ref="dataModal"
-      model-name="devices"
-      @close="closeModal"
-      @success="handleModalSuccess"
-      @error="handleModalError"
+      model-name="products"
+      @success="handleSuccess"
     />
   </div>
 </template>
 
 <script>
 import { ref } from 'vue'
-import { useDynamicData } from '@meda/dynamic-ui'
 
 export default {
-  name: 'DevicesPage',
   setup() {
     const dataTable = ref(null)
     const dataModal = ref(null)
     const stats = ref({})
 
-    const { loadData } = useDynamicData('/api/devices')
-
     const handleDataLoaded = (data) => {
       stats.value = data.stats || {}
     }
 
+    const openCreateModal = () => {
+      dataModal.value.openModal({
+        title: 'Crear Producto',
+        endpoint: '/api/products',
+        method: 'POST',
+        actionType: 'form'
+      })
+    }
+
     const handleAction = ({ action, item }) => {
       switch (action) {
-        case 'view':
-          openViewModal(item)
-          break
         case 'edit':
-          openEditModal(item)
+          dataModal.value.openModal({
+            title: 'Editar Producto',
+            endpoint: `/api/products/${item.id}`,
+            method: 'PUT',
+            actionType: 'form',
+            item: item
+          })
           break
         case 'delete':
-          openDeleteModal(item)
+          dataModal.value.openModal({
+            title: 'Eliminar Producto',
+            endpoint: `/api/products/${item.id}`,
+            method: 'DELETE',
+            actionType: 'confirm',
+            item: item
+          })
           break
       }
     }
 
-    const openCreateModal = () => {
-      dataModal.value?.open('create')
-    }
-
-    const openViewModal = (item) => {
-      dataModal.value?.open('view', item)
-    }
-
-    const openEditModal = (item) => {
-      dataModal.value?.open('edit', item)
-    }
-
-    const openDeleteModal = (item) => {
-      if (confirm(`¿Eliminar dispositivo "${item.name}"?`)) {
-        // Lógica de eliminación
-      }
-    }
-
-    const closeModal = () => {
-      dataModal.value?.close()
-    }
-
-    const handleModalSuccess = (data) => {
-      dataTable.value?.reload()
-      closeModal()
-    }
-
-    const handleModalError = (error) => {
-      console.error('Error en modal:', error)
-    }
-
-    const getStatusLabel = (status) => {
-      const labels = {
-        connected: 'Conectado',
-        disconnected: 'Desconectado'
-      }
-      return labels[status] || status
-    }
-
-    const getStatusColor = (status) => {
-      const colors = {
-        connected: 'badge-success',
-        disconnected: 'badge-danger'
-      }
-      return colors[status] || 'badge-secondary'
+    const handleSuccess = () => {
+      dataTable.value.refresh()
     }
 
     return {
@@ -348,259 +239,191 @@ export default {
       dataModal,
       stats,
       handleDataLoaded,
-      handleAction,
       openCreateModal,
-      openViewModal,
-      openEditModal,
-      openDeleteModal,
-      closeModal,
-      handleModalSuccess,
-      handleModalError,
-      getStatusLabel,
-      getStatusColor
+      handleAction,
+      handleSuccess
     }
   }
 }
 </script>
 ```
 
-### 3. Usar Composable
+## 🧩 Componentes Principales
+
+### MedaDataTable
+Tabla completa con filtros, búsqueda, ordenamiento y paginación automática.
+
+**Props principales:**
+- `endpoint`: URL de la API
+- `model-name`: Nombre del modelo para caché
+- `per-page`: Elementos por página (default: 15)
+
+**Eventos:**
+- `@dataLoaded`: Cuando se cargan datos
+- `@action`: Cuando se ejecuta una acción
+
+### MedaDataModal
+Modal universal para crear, editar, ver y confirmar acciones.
+
+**Métodos:**
+- `openModal(config)`: Abrir con configuración específica
+
+### MedaStatsGrid & MedaStatCard
+Sistema de tarjetas para mostrar estadísticas.
+
+## 🎨 Personalización
+
+### Custom Cells en Tablas
 
 ```vue
-<script>
-import { useDynamicData } from '@meda/dynamic-ui'
-
-export default {
-  setup() {
-    const {
-      metadata,
-      state,
-      loadData,
-      createData,
-      updateData,
-      deleteData,
-      searchData
-    } = useDynamicData('/api/devices', {
-      relations: ['user'],
-      searchColumns: ['name', 'user.name'],
-      perPage: 20
-    })
-
-    // Cargar datos
-    const loadDevices = async () => {
-      await loadData()
-    }
-
-    // Crear dispositivo
-    const createDevice = async (data) => {
-      await createData(data)
-    }
-
-    // Buscar dispositivos
-    const searchDevices = async (query) => {
-      await searchData(query)
-    }
-
-    return {
-      metadata,
-      state,
-      loadDevices,
-      createDevice,
-      searchDevices
-    }
-  }
-}
-</script>
+<MedaDataTable endpoint="/api/products">
+  <!-- Personalizar celda de precio -->
+  <template #cell-price="{ value, item }">
+    <span class="font-bold text-green-600">
+      ${{ value.toFixed(2) }}
+    </span>
+  </template>
+  
+  <!-- Personalizar celda de estado -->
+  <template #cell-status="{ value }">
+    <span :class="getStatusClass(value)">
+      {{ getStatusLabel(value) }}
+    </span>
+  </template>
+</MedaDataTable>
 ```
 
-## API Reference
-
-### PHP
-
-#### QuerySortingService
+### Acciones Personalizadas
 
 ```php
-use Meda\DynamicUI\Services\QuerySortingService;
-
-$service = new QuerySortingService();
-
-$response = $service->getJsonResponse(
-    $model,
-    $request,
-    $relations,
-    $searchColumns,
-    $customQuery,
-    $perPage,
-    $defaultSortBy,
-    $defaultOrder,
-    $additionalData
-);
-```
-
-#### DynamicUIService
-
-```php
-use Meda\DynamicUI\Services\DynamicUIService;
-
-$service = new DynamicUIService();
-
-$metadata = $service->getModelMetadata(Device::class);
-$response = $service->processDynamicView(Device::class, $request, $config);
-```
-
-#### HasMetadata Trait
-
-```php
-class Device extends Model
+// En tu modelo
+public function defineActionModals(): array
 {
-    use HasMetadata;
-
-    public function defineTable(): array
-    {
-        // Configuración de tabla
-    }
-
-    public function defineModal(): array
-    {
-        // Configuración de modal
-    }
+    return [
+        'duplicate' => [
+            'key' => 'duplicate',
+            'label' => 'Duplicar',
+            'icon' => 'fa fa-copy',
+            'color' => 'info',
+            'type' => 'confirm',
+            'confirmMessage' => '¿Duplicar este producto?'
+        ]
+    ];
 }
 ```
 
-### Vue.js
+## ⚡ Features Avanzados
 
-#### useDynamicUI
-
-```javascript
-import { useDynamicUI } from '@meda/dynamic-ui'
-
-const {
-  config,
-  state,
-  setLoading,
-  setData,
-  setFilters,
-  setSearch,
-  buildUrl,
-  addFilter,
-  removeFilter
-} = useDynamicUI()
-```
-
-#### useDynamicData
-
-```javascript
-import { useDynamicData } from '@meda/dynamic-ui'
-
-const {
-  metadata,
-  state,
-  loadData,
-  createData,
-  updateData,
-  deleteData,
-  searchData
-} = useDynamicData('/api/devices', options)
-```
-
-## Configuración Avanzada
-
-### Rutas Personalizadas
+### Caché Automático
+Los metadatos se cachean automáticamente para mejorar performance:
 
 ```php
-// config/dynamic-ui.php
-'routes' => [
-    'devices' => [
-        'model' => \App\Models\Device::class,
-        'controller' => \App\Http\Controllers\CustomDeviceController::class,
-        'prefix' => 'api',
-        'middleware' => ['api', 'auth'],
-        'additional_routes' => [
-            'connect' => [
-                'method' => 'post',
-                'action' => 'connect'
-            ],
-            'disconnect' => [
-                'method' => 'post',
-                'action' => 'disconnect'
-            ],
-            'qr-code' => [
-                'method' => 'get',
-                'action' => 'getQrCode'
-            ]
-        ]
+// Limpiar caché cuando cambies metadatos
+app(\Meda\DynamicUI\Services\DynamicUIService::class)
+    ->clearMetadataCache(Product::class);
+```
+
+### Filtros Avanzados
+```php
+// En defineTable()
+'filters' => [
+    'price_range' => [
+        'type' => 'number_range',
+        'label' => 'Rango de Precio'
     ],
-],
+    'created_date' => [
+        'type' => 'date_range', 
+        'label' => 'Fecha de Creación'
+    ]
+]
 ```
 
-### Componentes Personalizados
+### Búsqueda en Relaciones
+```php
+'searchColumns' => [
+    'name',
+    'description', 
+    'r:category.name',     // Buscar en relación
+    'r:supplier.company'   // Múltiples relaciones
+]
+```
 
-```vue
-<template>
-  <DynamicDataTable
-    endpoint="/api/devices"
-    :custom-columns="customColumns"
-    :custom-actions="customActions"
-  >
-    <!-- Slots personalizados -->
-    <template #header-actions>
-      <button @click="exportData">Exportar</button>
-    </template>
+## 🔧 Configuración
 
-    <template #cell-custom="{ item }">
-      <CustomCell :item="item" />
-    </template>
-  </DynamicDataTable>
-</template>
+### Backend (config/dynamic-ui.php)
+```php
+return [
+    'cache_timeout' => 3600,
+    'pagination' => [
+        'default_per_page' => 15,
+        'per_page_options' => [10, 15, 25, 50]
+    ],
+    'permissions' => [
+        'enabled' => true,
+        'check_ownership' => true
+    ]
+];
+```
 
-<script>
-export default {
-  data() {
-    return {
-      customColumns: [
-        {
-          key: 'custom',
-          label: 'Personalizado',
-          type: 'custom',
-          width: '200px'
-        }
-      ],
-      customActions: [
-        {
-          key: 'custom_action',
-          label: 'Acción Personalizada',
-          icon: 'fas fa-star',
-          handler: this.handleCustomAction
-        }
-      ]
-    }
-  },
-  methods: {
-    handleCustomAction(item) {
-      console.log('Acción personalizada:', item)
-    },
-    exportData() {
-      // Lógica de exportación
-    }
+### Frontend (Vue Plugin)
+```javascript
+app.use(MedaUI, {
+  cacheTimeout: 3600000,
+  metadataEndpoint: '/api/metadata',
+  theme: {
+    primary: 'blue',
+    success: 'green'
   }
-}
-</script>
+})
 ```
 
-## Contribuir
+## 📦 Estructura del Proyecto
+
+```
+dynamic-ui/
+├── src/                          # Backend Laravel
+│   ├── Services/
+│   │   ├── DynamicUIService.php  # Servicio principal  
+│   │   └── QuerySortingService.php
+│   ├── Http/Controllers/
+│   │   └── DynamicController.php # Controlador universal
+│   ├── Traits/
+│   │   └── HasMetadata.php       # Trait para modelos
+│   └── Contracts/
+│       └── DynamicModel.php      # Interfaz opcional
+├── npm/plugins/meda-ui/          # Frontend Vue.js
+│   ├── components/
+│   │   ├── DataTable/           # Tabla dinámica
+│   │   ├── DataModal.vue        # Modal universal
+│   │   └── Stats*.vue           # Componentes de stats
+│   ├── composables/
+│   │   ├── useMetadata.js       # Manejo de metadatos
+│   │   └── useDataValidation.js # Validaciones
+│   └── index.js                 # Plugin principal
+└── config/
+    └── dynamic-ui.php           # Configuración
+```
+
+## 🎯 Casos de Uso Ideales
+
+- ✅ Paneles administrativos
+- ✅ CRUDs de catálogos
+- ✅ Gestión de usuarios
+- ✅ Sistemas de inventario
+- ✅ Cualquier interfaz con tablas + formularios repetitivos
+
+## 🤝 Contribuir
 
 1. Fork el proyecto
-2. Crear una rama para tu feature (`git checkout -b feature/AmazingFeature`)
-3. Commit tus cambios (`git commit -m 'Add some AmazingFeature'`)
-4. Push a la rama (`git push origin feature/AmazingFeature`)
-5. Abrir un Pull Request
+2. Crea tu feature branch (`git checkout -b feature/nueva-funcionalidad`)
+3. Commit tus cambios (`git commit -am 'Agregar nueva funcionalidad'`)
+4. Push al branch (`git push origin feature/nueva-funcionalidad`)
+5. Abre un Pull Request
 
-## Licencia
+## 📄 Licencia
 
-Este proyecto está licenciado bajo la Licencia MIT - ver el archivo [LICENSE](LICENSE) para detalles.
+MIT License - ver archivo [LICENSE](LICENSE) para detalles.
 
-## Soporte
+---
 
-- 📧 Email: team@meda.com
-- 📖 Documentación: [docs.meda.com](https://docs.meda.com)
-- 🐛 Issues: [GitHub Issues](https://github.com/meda/dynamic-ui/issues)
+**Dynamic UI** - Construye interfaces dinámicas con metadatos. Simple, potente, escalable.

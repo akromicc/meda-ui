@@ -1,48 +1,67 @@
 {
   "name": "@meda/dynamic-ui",
   "version": "1.0.0",
-  "description": "Librería Vue.js para vistas dinámicas con tablas, paginación y componentes reutilizables",
-  "main": "dist/dynamic-ui.umd.js",
-  "module": "dist/dynamic-ui.es.js",
-  "types": "dist/types/index.d.ts",
+  "description": "Librería moderna para Vue.js que permite crear interfaces CRUD completas usando metadatos del backend. Componentes dinámicos para tablas, modales y formularios.",
+  "type": "module",
+  "main": "npm/plugins/meda-ui/index.js",
   "files": [
-    "dist",
-    "src"
+    "npm/plugins/meda-ui/**/*"
   ],
-  "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview",
-    "type-check": "vue-tsc --noEmit",
-    "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --fix --ignore-path .gitignore"
+  "exports": {
+    ".": {
+      "import": "./npm/plugins/meda-ui/index.js"
+    },
+    "./components/*": "./npm/plugins/meda-ui/components/*",
+    "./composables/*": "./npm/plugins/meda-ui/composables/*",
+    "./config": "./npm/plugins/meda-ui/config.js"
   },
   "keywords": [
     "vue",
     "vue3",
+    "crud",
     "dynamic",
     "table",
-    "pagination",
-    "search",
-    "filter",
-    "ui",
-    "components"
+    "modal",
+    "form",
+    "tailwind",
+    "laravel",
+    "metadata",
+    "ui-components"
   ],
-  "author": "Meda Team",
+  "author": "Meda Team <team@meda.com>",
   "license": "MIT",
+  "homepage": "https://github.com/meda/dynamic-ui",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/meda/dynamic-ui.git"
+  },
+  "bugs": {
+    "url": "https://github.com/meda/dynamic-ui/issues"
+  },
   "peerDependencies": {
-    "vue": "^3.0.0"
+    "vue": "^3.3.0",
+    "@vue/composition-api": "^1.7.0",
+    "tailwindcss": "^3.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@vue/composition-api": {
+      "optional": true
+    }
   },
   "devDependencies": {
-    "@types/node": "^20.0.0",
     "@vitejs/plugin-vue": "^4.0.0",
-    "@vue/compiler-sfc": "^3.0.0",
-    "eslint": "^8.0.0",
-    "eslint-plugin-vue": "^9.0.0",
-    "typescript": "^5.0.0",
-    "vite": "^4.0.0",
-    "vue-tsc": "^1.0.0"
+    "@vue/test-utils": "^2.4.0",
+    "vitest": "^0.34.0",
+    "vue": "^3.3.0"
   },
-  "dependencies": {
-    "axios": "^1.0.0"
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest --coverage"
+  },
+  "engines": {
+    "node": ">=16.0.0"
   }
 }
